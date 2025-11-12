@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BetAI — Planeador de Apostas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>BetAI</h1>
+        <p>Questionário e recomendações de apostas (ferramenta informativa — não garante resultados).</p>
+      </div>
+      <div class="account" id="accountArea">
+        <button id="openLogin">Entrar / Registar</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Questionário</h2>
+        <form id="survey">
+          <label>Nome (opcional)
+            <input type="text" id="name" placeholder="Teu nome">
+          </label>
+
+          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">💰 Informação Financeira</h3>
+
+          <label>Bankroll (capital disponível em €)
+            <input type="number" id="bankroll" value="100" min="1" required>
+          </label>
+
+          <label>Montante alvo (€)
+            <input type="number" id="target" value="200" min="1" required>
+          </label>
+
+          <label>Horizonte (dias)
+            <input type="number" id="timeframe" value="30" min="1" required>
+          </label>
+
+          <label>Podes repor o bankroll se perderes tudo?
+            <select id="canReload">
+              <option value="no">Não</option>
+              <option value="partial">Parcialmente</option>
+              <option value="yes">Sim</option>
+            </select>
+          </label>
+
+          <label>Objetivo principal
+            <select id="goal">
+              <option value="fun">Diversão</option>
+              <option value="secondary" selected>Rendimento secundário</option>
+              <option value="primary">Rendimento principal (⚠️ arriscado)</option>
+            </select>
+          </label>
+
+          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">📊 Historial e Experiência</h3>
+
+          <label>Experiência em apostas
+            <select id="experience">
+              <option value="none">Nenhuma</option>
+              <option value="low">Baixa (< 6 meses)</option>
+              <option value="medium" selected>Média (6 meses - 2 anos)</option>
+              <option value="high">Alta (2+ anos)</option>
+            </select>
+          </label>
+
+          <label>Quantas apostas fizeste nos últimos 30 dias?
+            <input type="number" id="recentBets" value="0" min="0">
+          </label>
+
+          <label>Qual a tua taxa de sucesso aproximada? (%)
+            <input type="number" id="winRate" value="50" min="0" max="100">
+            <small style="color:#9fb4c8;font-size:12px">Se és novo, deixa 50%</small>
+          </label>
+
+          <label>Maior sequência de perdas consecutivas
+            <input type="number" id="maxLoss" value="3" min="0" max="20">
+          </label>
+
+          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">🎯 Preferências de Apostas</h3>
+
+          <label>Preferência de esporte
+            <select id="sport">
+              <option value="mixed">Misturado</option>
+              <option value="football" selected>Futebol</option>
+              <option value="basketball">Basquetebol</option>
+              <option value="tennis">Ténis</option>
+              <option value="other">Outro</option>
+            </select>
+          </label>
+
+          <label>Tipo de apostas preferidas
+            <select id="betType">
+              <option value="single" selected>Simples (uma aposta de cada vez)</option>
+              <option value="combo">Múltiplas/Combinadas</option>
+              <option value="system">Sistema</option>
+              <option value="mixed">Misturado</option>
+            </select>
+          </label>
+
+          <label>Momento da aposta
+            <select id="timing">
+              <option value="pre" selected>Pré-jogo</option>
+              <option value="live">Live/Ao vivo</option>
+              <option value="both">Ambos</option>
+            </select>
+          </label>
+
+          <label>Range de odds preferidas
+            <select id="oddsRange">
+              <option value="low">Baixas (1.20-1.80) — Seguras</option>
+              <option value="medium" selected>Médias (1.80-2.50) — Equilibradas</option>
+              <option value="high">Altas (2.50+) — Arriscadas</option>
+              <option value="mixed">Misturado</option>
+            </select>
+          </label>
+
+          <label>Mercados favoritos
+            <select id="markets">
+              <option value="result">Resultado final (1X2)</option>
+              <option value="over" selected>Over/Under (golos/pontos)</option>
+              <option value="handicap">Handicap</option>
+              <option value="btts">Ambas marcam</option>
+              <option value="mixed">Vários mercados</option>
+            </select>
+          </label>
+
+          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">⏰ Disponibilidade e Disciplina</h3>
+
+          <label>Tempo dedicado por dia a analisar apostas
+            <select id="timePerDay">
+              <option value="low">< 30 minutos</option>
+              <option value="medium" selected>30 min - 2 horas</option>
+              <option value="high">2+ horas</option>
+            </select>
+          </label>
+
+          <label>Frequência de apostas desejada
+            <select id="frequency">
+              <option value="daily" selected>Diária</option>
+              <option value="weekly">Semanal</option>
+              <option value="occasional">Ocasional</option>
+            </select>
+          </label>
+
+          <label>Defines limites de perda diária/semanal?
+            <select id="setLimits">
+              <option value="never">Nunca</option>
+              <option value="sometimes">Às vezes</option>
+              <option value="always" selected>Sempre</option>
+            </select>
+          </label>
+
+          <label>Consegues parar após 2-3 perdas seguidas?
+            <select id="stopAfterLoss">
+              <option value="no">Não</option>
+              <option value="sometimes">Às vezes</option>
+              <option value="yes" selected>Sim</option>
+            </select>
+          </label>
+
+          <label>Já apostaste mais do que devias após uma grande perda?
+            <select id="chasing">
+              <option value="often">Frequentemente</option>
+              <option value="sometimes" selected>Às vezes</option>
+              <option value="never">Nunca</option>
+            </select>
+          </label>
+
+          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">🧠 Conhecimento Técnico</h3>
+
+          <label>Acompanhas notícias de lesões/equipas regularmente?
+            <select id="followNews">
+              <option value="no">Não</option>
+              <option value="sometimes" selected>Às vezes</option>
+              <option value="yes">Sim, sempre</option>
+            </select>
+          </label>
+
+          <label>Usas estatísticas ou análise de dados?
+            <select id="useStats">
+              <option value="no">Não</option>
+              <option value="basic" selected>Básico (resultados recentes)</option>
+              <option value="advanced">Avançado (xG, posse, etc.)</option>
+            </select>
+          </label>
+
+          <label>Conheces estes conceitos?
+            <select id="concepts">
+              <option value="none">Nenhum</option>
+              <option value="basic" selected>Value betting / Expected Value</option>
+              <option value="advanced">Kelly Criterion / Variance / CLV</option>
+            </select>
+          </label>
+
+          <label>Ferramentas que usas
+            <select id="tools">
+              <option value="none" selected>Nenhuma</option>
+              <option value="odds">Comparadores de odds</option>
+              <option value="tipsters">Tipsters</option>
+              <option value="software">Software de análise</option>
+              <option value="multiple">Várias ferramentas</option>
+            </select>
+          </label>
+
+          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">⚙️ Gestão de Stake</h3>
+
+          <label>Tolerância ao risco
+            <select id="risk">
+              <option value="low">Baixa (conservador)</option>
+              <option value="medium" selected>Média (equilibrado)</option>
+              <option value="high">Alta (agressivo)</option>
+            </select>
+          </label>
+
+          <label>Método de gestão de stake preferido
+            <select id="staking">
+              <option value="flat">Flat (stakes iguais)</option>
+              <option value="fraction" selected>Percentagem do bankroll</option>
+              <option value="kelly">Kelly (requer estimativa de prob.)</option>
+              <option value="confidence">Baseado em confiança</option>
+            </select>
+          </label>
+
+          <div class="actions">
+            <button type="submit">Gerar recomendação</button>
+            <button type="button" id="resetBtn">Limpar</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Payment / Auth modals -->
+      <div id="authModal" class="modal hidden">
+        <div class="modal-content">
+          <button class="modal-close" id="closeAuth">✕</button>
+          <h3>Entrar / Registar</h3>
+          <div class="tabs">
+            <button id="tabLogin">Entrar</button>
+            <button id="tabSignup">Registar</button>
+          </div>
+          <div id="loginBox">
+            <label>Email<input id="loginEmail" type="text"></label>
+            <label>Password<input id="loginPass" type="password"></label>
+            <div class="actions"><button id="doLogin">Entrar</button></div>
+          </div>
+          <div id="signupBox" class="hidden">
+            <label>Nome<input id="signupName" type="text"></label>
+            <label>Email<input id="signupEmail" type="text"></label>
+            <label>Password<input id="signupPass" type="password"></label>
+            <div class="actions"><button id="doSignup">Registar</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="paymentModal" class="modal hidden">
+        <div class="modal-content">
+          <button class="modal-close" id="closePayment">✕</button>
+          <h3>Desbloqueia Acesso Completo</h3>
+          <p>Escolhe um plano para activar todas as funcionalidades premium:</p>
+          
+          <div class="benefits">
+            <h4 style="color:#06b6d4;margin-bottom:12px">✨ O que vais receber:</h4>
+            <ul style="list-style:none;padding:0;margin:0 0 20px 0">
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Análise personalizada baseada em 20+ critérios
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Recomendações de IA adaptadas ao teu perfil
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Plano semanal detalhado com progressão
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Regras de gestão de risco personalizadas
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Gerador de stakes com Kelly Criterion
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Alertas psicológicos e de disciplina
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Benchmarks realistas vs apostadores profissionais
+              </li>
+              <li style="padding:8px 0">
+                <strong style="color:#10b981">✓</strong> Questionários ilimitados para diferentes cenários
+              </li>
+            </ul>
+          </div>
+
+          <div class="plans">
+            <div class="plan">
+              <h4>Mensal</h4>
+              <p>€10 / mês</p>
+              <button class="payBtn" data-plan="monthly">Pagar Mensal</button>
+            </div>
+            <div class="plan plan-popular">
+              <div class="popular-badge">MAIS POPULAR</div>
+              <h4>Anual</h4>
+              <p class="price-main">€45 / ano</p>
+              <p class="price-compare">em vez de €120 (12 × €10)</p>
+              <p class="savings">Poupa €75!</p>
+              <button class="payBtn" data-plan="yearly">Pagar Anual</button>
+            </div>
+          </div>
+          
+          <div style="text-align:center;margin-top:16px;padding:12px;background:rgba(6,182,212,0.1);border-radius:8px">
+            <p style="margin:0;font-size:13px;color:#9fb4c8">
+              🔒 Pagamento seguro processado por Stripe<br>
+              💯 Cancela a qualquer momento
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <section id="advice" class="card hidden">
+        <h2>Recomendação (IA)</h2>
+        <div id="adviceContent"></div>
+      </section>
+
+      <section id="betBuilder" class="card hidden">
+        <h2>Gerador de apostas</h2>
+        <p>Introduz uma aposta concreta (nome, odds decimais e a tua estimativa de probabilidade). O sistema calcula stake sugerida (Kelly e outro método).</p>
+
+        <form id="betForm">
+          <label>Evento / Aposta
+            <input type="text" id="event" placeholder="Ex: Team A vs Team B — vitória Team A" required>
+          </label>
+
+          <label>Odds (decimal)
+            <input type="number" id="odds" step="0.01" min="1.01" value="2.00" required>
+          </label>
+
+          <label>Tua probabilidade estimada (%)
+            <input type="number" id="prob" step="0.1" min="0.1" max="99.9" value="55" required>
+          </label>
+
+          <div class="actions">
+            <button type="submit">Calcular stake</button>
+          </div>
+        </form>
+
+        <div id="betResult"></div>
+      </section>
+
+      <section class="card">
+        <h3>Aviso e ética</h3>
+        <p>Esta ferramenta é meramente informativa. Aconselha-se responsabilidade financeira. Não sou um consultor financeiro. As apostas envolvem risco de perda total do capital.</p>
+      </section>
+
+    </main>
+
+    <footer>
+      <small>Gerado por BetAI — ferramenta local de demonstração.</small>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
