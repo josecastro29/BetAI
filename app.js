@@ -398,7 +398,7 @@ function setupAuthUI(){
     const pass = document.getElementById('signupPass').value;
     if (!email || !pass){ alert('Introduce email e password válidos.'); return; }
     if (getUser(email)){ alert('Utilizador já existe. Usa Entrar.'); return; }
-    const user = {name, email, pass, subscribed:false, subUntil:null};
+    const user = {name, email, pass, subscribed:false, subUntil:null, cancelledAt:null, planType:null};
     saveUser(user);
     setCurrentUser(email);
     authModal.classList.add('hidden');
@@ -450,16 +450,90 @@ function renderAccount(){
   accountArea.innerHTML = '';
   if (u){
     const div = document.createElement('div');
-    div.innerHTML = `<div style="text-align:right"><strong>${escapeHtml(u.name||u.email)}</strong><br><small>${isSubscribed(u)?'Subscrito':'Sem subscrição'}</small></div>`;
-    const btnLogout = document.createElement('button'); btnLogout.textContent='Sair';
+    const isSub = isSubscribed(u);
+    let statusText = 'Sem subscrição';
+    
+    if (isSub){
+      const until = new Date(u.subUntil);
+      const formatted = until.toLocaleDateString('pt-PT');
+      
+      if (u.cancelledAt){
+        statusText = `Ativa até ${formatted} (Cancelada)`;
+      } else {
+        statusText = `Ativa até ${formatted}`;
+      }
+    }
+    
+    div.innerHTML = `<div style="text-align:right"><strong>${escapeHtml(u.name||u.email)}</strong><br><small>${statusText}</small></div>`;
+    
+    // Botão de gestão de subscrição (se subscrito)
+    if (isSub && !u.cancelledAt){
+      const btnManage = document.createElement('button');
+      btnManage.textContent = 'Gerir Subscrição';
+      btnManage.style.marginLeft = '8px';
+      btnManage.style.fontSize = '12px';
+      btnManage.style.padding = '4px 8px';
+      btnManage.addEventListener('click', () => showManageSubscription());
+      accountArea.appendChild(btnManage);
+    }
+    
+    const btnLogout = document.createElement('button'); 
+    btnLogout.textContent='Sair';
     btnLogout.style.marginLeft='8px';
     btnLogout.addEventListener('click',()=>{ localStorage.removeItem('betai_current'); renderAccount(); });
-    accountArea.appendChild(div); accountArea.appendChild(btnLogout);
+    accountArea.appendChild(div); 
+    accountArea.appendChild(btnLogout);
   } else {
     const btn = document.createElement('button'); btn.id='openLoginBtn'; btn.textContent='Entrar / Registar';
     btn.addEventListener('click',()=>authModal.classList.remove('hidden'));
     accountArea.appendChild(btn);
   }
+}
+
+/* ----------------- Gestão de subscrição ----------------- */
+function showManageSubscription(){
+  const u = getCurrentUser();
+  if (!u || !isSubscribed(u)) return;
+  
+  const until = new Date(u.subUntil);
+  const formatted = until.toLocaleDateString('pt-PT', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  const planType = u.planType || 'mensal';
+  const planName = planType === 'yearly' ? 'Anual' : 'Mensal';
+  
+  const message = `
+Subscrição Ativa
+
+Plano: ${planName}
+Ativa até: ${formatted}
+
+Tens a certeza que queres cancelar a subscrição?
+
+⚠️ Importante:
+• O cancelamento é imediato e não pode ser revertido
+• Continuarás a ter acesso premium até ${formatted}
+• Após essa data, os benefícios serão desativados
+• Não haverá reembolso do período já pago
+• Podes reativar mais tarde se quiseres
+  `.trim();
+  
+  if (confirm(message)){
+    cancelSubscription(u);
+  }
+}
+
+function cancelSubscription(user){
+  user.cancelledAt = new Date().toISOString();
+  saveUser(user);
+  renderAccount();
+  
+  alert('✓ Subscrição cancelada com sucesso!\n\nContinuas com acesso premium até ' + 
+        new Date(user.subUntil).toLocaleDateString('pt-PT') + 
+        '\n\nDepois dessa data, os benefícios serão desativados.');
 }
 
 /* ----------------- Pagamento simulado ----------------- */
@@ -509,6 +583,8 @@ function checkPaymentReturn(){
         const until = new Date(now.setMonth(now.getMonth()+months));
         u.subscribed = true;
         u.subUntil = until.toISOString();
+        u.planType = payment.plan;
+        u.cancelledAt = null; // Limpar qualquer cancelamento anterior
         saveUser(u);
         
         // Limpar dados pendentes
