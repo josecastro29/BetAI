@@ -1204,10 +1204,31 @@ async function loadReferralData(userEmail) {
   const codeInput = document.getElementById('referralCodeInput');
   const linkInput = document.getElementById('referralLinkInput');
   
+  // Se não tem código, gerar um agora (para utilizadores antigos)
+  if (!user.referral_code) {
+    const newCode = generateReferralCode(user.name || 'user', user.email);
+    
+    // Atualizar na base de dados
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ referral_code: newCode })
+      .eq('id', user.id);
+    
+    if (!updateError) {
+      user.referral_code = newCode;
+      console.log('✅ Código de referral gerado:', newCode);
+    } else {
+      console.error('Erro ao gerar código:', updateError);
+    }
+  }
+  
   if (user.referral_code) {
     codeInput.value = user.referral_code;
     const fullLink = `${window.location.origin}${window.location.pathname}?ref=${user.referral_code}`;
     linkInput.value = fullLink;
+  } else {
+    codeInput.value = 'Erro ao gerar código';
+    linkInput.value = 'Contacta o suporte';
   }
   
   // Carregar pontos
