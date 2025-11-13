@@ -1174,12 +1174,77 @@ async function renderAccount(){
     accountArea.appendChild(div); 
     accountArea.appendChild(btnLogout);
     
+    // Mostrar barra de pontos na aba principal
+    const pointsBarMain = document.getElementById('pointsBarMain');
+    if (pointsBarMain) {
+      pointsBarMain.style.display = 'block';
+    }
+    
+    // Carregar pontos para a barra compacta
+    loadPointsForMainTab(u.email);
+    
     // Nota: A secção de referral agora está na aba "Missões" e só é carregada quando essa aba é aberta
     // A função loadReferralData é chamada apenas quando o usuário clica na aba "Missões"
   } else {
     const btn = document.createElement('button'); btn.id='openLoginBtn'; btn.textContent='Entrar / Registar';
     btn.addEventListener('click',()=>authModal.classList.remove('hidden'));
     accountArea.appendChild(btn);
+    
+    // Ocultar barra de pontos se não estiver logado
+    const pointsBarMain = document.getElementById('pointsBarMain');
+    if (pointsBarMain) {
+      pointsBarMain.style.display = 'none';
+    }
+  }
+}
+
+/* ----------------- Carregar Pontos para Barra Compacta ----------------- */
+async function loadPointsForMainTab(userEmail) {
+  try {
+    // Buscar usuário
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', userEmail)
+      .single();
+    
+    if (error || !user) {
+      console.error('Erro ao carregar utilizador para pontos:', error);
+      return;
+    }
+    
+    // Buscar pontos
+    const { data: points } = await supabase
+      .from('referral_points')
+      .select('points')
+      .eq('user_id', user.id)
+      .single();
+    
+    const userPoints = points ? points.points : 0;
+    
+    // Atualizar barra compacta
+    const userPointsMain = document.getElementById('userPointsMain');
+    const pointsProgressMain = document.getElementById('pointsProgressMain');
+    const pointsToNextMain = document.getElementById('pointsToNextMain');
+    
+    if (userPointsMain) {
+      userPointsMain.textContent = userPoints;
+    }
+    
+    // Calcular progresso
+    const nextMilestone = userPoints < 20 ? 20 : userPoints < 50 ? 50 : 100;
+    const progress = (userPoints / nextMilestone) * 100;
+    
+    if (pointsProgressMain) {
+      pointsProgressMain.style.width = `${Math.min(progress, 100)}%`;
+    }
+    
+    if (pointsToNextMain) {
+      pointsToNextMain.textContent = nextMilestone - userPoints;
+    }
+    
+  } catch (err) {
+    console.error('Erro ao carregar pontos:', err);
   }
 }
 
@@ -1251,13 +1316,33 @@ async function loadReferralData(userEmail) {
       .single();
     
     const userPoints = points ? points.points : 0;
+    
+    // Atualizar na aba Missões
     document.getElementById('userPoints').textContent = userPoints;
+    
+    // Atualizar na barra compacta da aba BetAI
+    const userPointsMain = document.getElementById('userPointsMain');
+    if (userPointsMain) {
+      userPointsMain.textContent = userPoints;
+    }
     
     // Calcular progresso para próxima recompensa
     const nextMilestone = userPoints < 20 ? 20 : userPoints < 50 ? 50 : 100;
     const progress = (userPoints / nextMilestone) * 100;
+    
+    // Atualizar na aba Missões
     document.getElementById('pointsProgress').style.width = `${Math.min(progress, 100)}%`;
     document.getElementById('pointsToNext').textContent = nextMilestone - userPoints;
+    
+    // Atualizar na barra compacta da aba BetAI
+    const pointsProgressMain = document.getElementById('pointsProgressMain');
+    const pointsToNextMain = document.getElementById('pointsToNextMain');
+    if (pointsProgressMain) {
+      pointsProgressMain.style.width = `${Math.min(progress, 100)}%`;
+    }
+    if (pointsToNextMain) {
+      pointsToNextMain.textContent = nextMilestone - userPoints;
+    }
     
   } catch (err) {
     console.log('Sem pontos ainda');
@@ -1454,28 +1539,41 @@ function initTabNavigation() {
   
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const targetTab = btn.getAttribute('data-tab');
-      
-      // Remover active de todos os botões e conteúdos
-      tabBtns.forEach(b => b.classList.remove('active'));
-      tabContents.forEach(c => c.classList.remove('active'));
-      
-      // Adicionar active ao botão clicado e conteúdo correspondente
-      btn.classList.add('active');
-      document.getElementById(`tab-${targetTab}`).classList.add('active');
-      
-      // Se for a aba de missões e o usuário estiver logado, carregar dados
-      if (targetTab === 'missions') {
-        const userEmail = localStorage.getItem('betai_current_user_email');
-        if (userEmail) {
-          console.log('Carregando dados de referral para:', userEmail);
-          loadReferralData(userEmail);
-        } else {
-          console.log('Utilizador não está logado');
-        }
-      }
+      switchTab(btn.getAttribute('data-tab'));
     });
   });
+  
+  // Botão "Ver Missões" da barra de pontos
+  const goToMissionsBtn = document.getElementById('goToMissions');
+  if (goToMissionsBtn) {
+    goToMissionsBtn.addEventListener('click', () => {
+      switchTab('missions');
+    });
+  }
+}
+
+function switchTab(targetTab) {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  // Remover active de todos os botões e conteúdos
+  tabBtns.forEach(b => b.classList.remove('active'));
+  tabContents.forEach(c => c.classList.remove('active'));
+  
+  // Adicionar active ao botão clicado e conteúdo correspondente
+  document.querySelector(`[data-tab="${targetTab}"]`).classList.add('active');
+  document.getElementById(`tab-${targetTab}`).classList.add('active');
+  
+  // Se for a aba de missões e o usuário estiver logado, carregar dados
+  if (targetTab === 'missions') {
+    const userEmail = localStorage.getItem('betai_current_user_email');
+    if (userEmail) {
+      console.log('Carregando dados de referral para:', userEmail);
+      loadReferralData(userEmail);
+    } else {
+      console.log('Utilizador não está logado');
+    }
+  }
 }
 
 // Inicializar tudo quando a página carregar
