@@ -1211,8 +1211,7 @@ async function loadReferralData(userEmail) {
     return;
   }
   
-  // Mostrar código de referral
-  const codeInput = document.getElementById('referralCodeInput');
+  // Preparar link de referral
   const linkInput = document.getElementById('referralLinkInput');
   
   // Se não tem código, gerar um agora (para utilizadores antigos)
@@ -1233,14 +1232,13 @@ async function loadReferralData(userEmail) {
     }
   }
   
+  // Configurar link completo
   if (user.referral_code) {
-    codeInput.value = user.referral_code;
     const fullLink = `${window.location.origin}${window.location.pathname}?ref=${user.referral_code}`;
     linkInput.value = fullLink;
-    console.log('✅ Código de referral configurado:', user.referral_code);
+    console.log('✅ Link de referral configurado');
   } else {
-    codeInput.value = 'Erro ao gerar código';
-    linkInput.value = 'Contacta o suporte';
+    linkInput.value = 'Erro ao gerar link - contacta o suporte';
     console.error('❌ Código de referral não disponível');
   }
   
@@ -1303,33 +1301,20 @@ async function loadReferralData(userEmail) {
     console.error('Erro ao carregar referências:', err);
   }
   
-  // Adicionar event listeners para copiar (usando onclick para evitar duplicação)
-  const copyCodeBtn = document.getElementById('copyReferralCode');
+  // Adicionar event listener para copiar link
   const copyLinkBtn = document.getElementById('copyReferralLink');
   
-  // Remover listeners antigos (se existirem) e adicionar novos
-  copyCodeBtn.replaceWith(copyCodeBtn.cloneNode(true));
+  // Remover listener antigo (se existir) e adicionar novo
   copyLinkBtn.replaceWith(copyLinkBtn.cloneNode(true));
-  
-  document.getElementById('copyReferralCode').addEventListener('click', () => {
-    codeInput.select();
-    navigator.clipboard.writeText(codeInput.value).then(() => {
-      alert('✅ Código copiado! Partilha com os teus amigos.');
-    }).catch(() => {
-      // Fallback para navegadores antigos
-      document.execCommand('copy');
-      alert('✅ Código copiado! Partilha com os teus amigos.');
-    });
-  });
   
   document.getElementById('copyReferralLink').addEventListener('click', () => {
     linkInput.select();
     navigator.clipboard.writeText(linkInput.value).then(() => {
-      alert('✅ Link copiado! Envia para os teus amigos.');
+      alert('✅ Link copiado! Partilha com os teus amigos para ganharem pontos. 🎁');
     }).catch(() => {
       // Fallback para navegadores antigos
       document.execCommand('copy');
-      alert('✅ Link copiado! Envia para os teus amigos.');
+      alert('✅ Link copiado! Partilha com os teus amigos para ganharem pontos. 🎁');
     });
   });
 }
