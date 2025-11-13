@@ -1532,6 +1532,107 @@ function checkPaymentReturn(){
   }
 }
 
+/* ----------------- Carregar Estado da Subscrição ----------------- */
+async function loadSubscriptionStatus() {
+  const userEmail = localStorage.getItem('betai_current_user_email');
+  const statusDiv = document.getElementById('currentSubscriptionInfo');
+  
+  if (!userEmail) {
+    statusDiv.innerHTML = `
+      <p style="text-align:center;color:#9fb4c8">
+        Faz login para ver o estado da tua subscrição
+      </p>
+    `;
+    return;
+  }
+  
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', userEmail)
+      .single();
+    
+    if (error || !user) {
+      statusDiv.innerHTML = '<p style="color:#ef4444">Erro ao carregar subscrição</p>';
+      return;
+    }
+    
+    const isSub = isSubscribed(user);
+    
+    if (!isSub) {
+      statusDiv.innerHTML = `
+        <div style="text-align:center;padding:20px">
+          <p style="font-size:16px;color:#9fb4c8;margin:0 0 8px 0">
+            ❌ Sem subscrição ativa
+          </p>
+          <p style="font-size:13px;color:#9fb4c8;margin:0">
+            Escolhe um plano abaixo para desbloquear todas as funcionalidades
+          </p>
+        </div>
+      `;
+    } else {
+      const until = new Date(user.sub_until);
+      const formatted = until.toLocaleDateString('pt-PT', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      const planType = user.plan_type || 'mensal';
+      const planName = planType === 'yearly' ? 'Anual' : 'Mensal';
+      const planPrice = planType === 'yearly' ? '€45/ano' : '€10/mês';
+      const isCancelled = user.cancelled_at;
+      
+      statusDiv.innerHTML = `
+        <div style="padding:16px;background:rgba(16,185,129,0.2);border-radius:8px;border:1px solid #10b981">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div>
+              <p style="margin:0;font-size:18px;font-weight:bold;color:#10b981">
+                ✅ Subscrição Ativa
+              </p>
+              <p style="margin:4px 0 0 0;font-size:13px;color:#9fb4c8">
+                Plano ${planName} · ${planPrice}
+              </p>
+            </div>
+            <div style="text-align:right">
+              <p style="margin:0;font-size:14px;color:#e6eef8;font-weight:600">
+                ${isCancelled ? 'Termina em:' : 'Renova em:'}
+              </p>
+              <p style="margin:4px 0 0 0;font-size:16px;color:#10b981;font-weight:bold">
+                ${formatted}
+              </p>
+            </div>
+          </div>
+          
+          ${isCancelled ? `
+            <div style="padding:12px;background:rgba(239,68,68,0.2);border-radius:6px;border:1px solid #ef4444;margin-top:12px">
+              <p style="margin:0;font-size:13px;color:#fca5a5">
+                ⚠️ <strong>Subscrição cancelada</strong> - Manténs acesso até ${formatted}
+              </p>
+            </div>
+          ` : `
+            <button id="cancelSubscriptionBtn" style="width:100%;padding:10px;background:rgba(239,68,68,0.8);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-top:12px">
+              🗑️ Cancelar Subscrição
+            </button>
+          `}
+        </div>
+      `;
+      
+      // Adicionar listener ao botão de cancelar
+      if (!isCancelled) {
+        document.getElementById('cancelSubscriptionBtn').addEventListener('click', () => {
+          showManageSubscription();
+        });
+      }
+    }
+    
+  } catch (err) {
+    console.error('Erro ao carregar subscrição:', err);
+    statusDiv.innerHTML = '<p style="color:#ef4444">Erro ao carregar dados</p>';
+  }
+}
+
 /* ----------------- Sistema de Navegação por Abas ----------------- */
 function initTabNavigation() {
   const tabBtns = document.querySelectorAll('.tab-btn');
@@ -1573,6 +1674,11 @@ function switchTab(targetTab) {
     } else {
       console.log('Utilizador não está logado');
     }
+  }
+  
+  // Se for a aba de subscrições, carregar estado
+  if (targetTab === 'subscription') {
+    loadSubscriptionStatus();
   }
 }
 

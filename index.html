@@ -30,6 +30,7 @@
     <!-- Sistema de Navegação por Abas -->
     <nav class="tabs-navigation">
       <button class="tab-btn active" data-tab="main">🎯 BetAI</button>
+      <button class="tab-btn" data-tab="subscription">💳 Subscrições</button>
       <button class="tab-btn" data-tab="missions">🎁 Missões</button>
     </nav>
 
@@ -417,6 +418,94 @@
       </section>
       </div>
       <!-- FIM ABA PRINCIPAL -->
+
+      <!-- ABA SUBSCRIÇÕES -->
+      <div id="tab-subscription" class="tab-content">
+        <section class="card">
+          <h2>💳 Gerir Subscrição</h2>
+          
+          <!-- Estado Atual -->
+          <div id="subscriptionStatus" style="background:rgba(6,182,212,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+            <h3 style="color:#06b6d4;margin:0 0 12px 0">📊 Estado da Tua Subscrição</h3>
+            <div id="currentSubscriptionInfo">
+              <p style="text-align:center;color:#9fb4c8">Sem subscrição ativa</p>
+            </div>
+          </div>
+
+          <!-- Planos Disponíveis -->
+          <div style="background:rgba(168,85,247,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+            <h3 style="color:#a855f7;margin:0 0 16px 0">✨ Planos Disponíveis</h3>
+            
+            <div class="plans" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div class="plan" style="background:rgba(255,255,255,0.02);padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)">
+                <h4 style="color:#06b6d4;margin:0 0 8px 0">💎 Mensal</h4>
+                <p style="font-size:32px;font-weight:bold;color:#fff;margin:12px 0">€10<span style="font-size:14px;color:#9fb4c8">/mês</span></p>
+                <ul style="list-style:none;padding:0;margin:16px 0;font-size:13px;color:#e6eef8">
+                  <li style="padding:6px 0">✓ Questionários ilimitados</li>
+                  <li style="padding:6px 0">✓ Recomendações IA</li>
+                  <li style="padding:6px 0">✓ Gerador de stakes</li>
+                  <li style="padding:6px 0">✓ Análise personalizada</li>
+                  <li style="padding:6px 0">✓ +8 pontos ao subscrever</li>
+                </ul>
+                <button class="payBtn" data-plan="monthly" style="width:100%;padding:12px;background:#06b6d4;color:#012;border:none;border-radius:8px;font-weight:600;cursor:pointer">
+                  Subscrever Mensal
+                </button>
+              </div>
+
+              <div class="plan plan-popular" style="background:rgba(6,182,212,0.05);padding:20px;border-radius:12px;border:2px solid #06b6d4;position:relative">
+                <div class="popular-badge" style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#06b6d4;color:#012;padding:4px 16px;border-radius:12px;font-size:11px;font-weight:700">MAIS POPULAR</div>
+                <h4 style="color:#10b981;margin:0 0 8px 0">👑 Anual</h4>
+                <p style="font-size:32px;font-weight:bold;color:#fff;margin:12px 0">€45<span style="font-size:14px;color:#9fb4c8">/ano</span></p>
+                <p style="font-size:12px;color:#9fb4c8;text-decoration:line-through;margin:0">€120 (12 × €10)</p>
+                <p style="font-size:14px;color:#10b981;font-weight:600;margin:4px 0">Poupa €75!</p>
+                <ul style="list-style:none;padding:0;margin:16px 0;font-size:13px;color:#e6eef8">
+                  <li style="padding:6px 0">✓ Tudo do plano mensal</li>
+                  <li style="padding:6px 0">✓ <strong>62% de desconto</strong></li>
+                  <li style="padding:6px 0">✓ +12 pontos ao subscrever</li>
+                  <li style="padding:6px 0">✓ Melhor custo/benefício</li>
+                </ul>
+                <button class="payBtn" data-plan="yearly" style="width:100%;padding:12px;background:#10b981;color:#012;border:none;border-radius:8px;font-weight:600;cursor:pointer">
+                  Subscrever Anual
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefícios -->
+          <div style="background:rgba(16,185,129,0.1);padding:16px;border-radius:8px">
+            <h3 style="color:#10b981;margin:0 0 12px 0">🎁 O Que Está Incluído</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">
+              <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:6px">
+                <strong style="color:#06b6d4">✓</strong> Análise de 20+ critérios
+              </div>
+              <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:6px">
+                <strong style="color:#06b6d4">✓</strong> Recomendações personalizadas
+              </div>
+              <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:6px">
+                <strong style="color:#06b6d4">✓</strong> Gerador de stakes Kelly
+              </div>
+              <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:6px">
+                <strong style="color:#06b6d4">✓</strong> Gestão de risco
+              </div>
+              <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:6px">
+                <strong style="color:#06b6d4">✓</strong> Alertas psicológicos
+              </div>
+              <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:6px">
+                <strong style="color:#06b6d4">✓</strong> Sistema de pontos
+              </div>
+            </div>
+          </div>
+
+          <!-- Política de Cancelamento -->
+          <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.04)">
+            <h4 style="color:#9fb4c8;margin:0 0 8px 0;font-size:14px">💯 Política de Cancelamento</h4>
+            <p style="font-size:13px;color:#9fb4c8;margin:0">
+              Podes cancelar a qualquer momento. Se cancelares, manténs acesso a todas as funcionalidades até ao fim do período que pagaste. Sem taxas escondidas, sem surpresas.
+            </p>
+          </div>
+        </section>
+      </div>
+      <!-- FIM ABA SUBSCRIÇÕES -->
 
       <!-- ABA MISSÕES -->
       <div id="tab-missions" class="tab-content">
