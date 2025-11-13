@@ -662,17 +662,29 @@ function setupAuthUI(){
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const pass = document.getElementById('loginPass').value;
     
+    if (!email || !pass) {
+      alert('❌ Por favor, preenche email e password.');
+      return;
+    }
+    
     try {
       // Buscar utilizador no Supabase
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
-        .eq('password', pass) // ⚠️ TODO: Usar hash comparison
         .single();
       
       if (error || !data) {
-        alert('❌ Credenciais inválidas.');
+        alert('❌ Email ou password incorretos.');
+        return;
+      }
+      
+      // Verificar password com bcrypt
+      const passwordMatch = await bcrypt.compare(pass, data.password);
+      
+      if (!passwordMatch) {
+        alert('❌ Email ou password incorretos.');
         return;
       }
       
@@ -682,6 +694,8 @@ function setupAuthUI(){
       
       authModal.classList.add('hidden');
       renderAccount();
+      
+      alert('✅ Login bem-sucedido!');
       
     } catch (err) {
       console.error('Erro ao fazer login:', err);
@@ -730,6 +744,9 @@ function setupAuthUI(){
         pendingRegistration.email
       );
       
+      // Hash da password antes de guardar
+      const passwordHash = await bcrypt.hash(pendingRegistration.password, 10);
+      
       const { data, error } = await supabase
         .from('users')
         .insert([
@@ -738,7 +755,7 @@ function setupAuthUI(){
             email: pendingRegistration.email,
             nif: pendingRegistration.nif,
             phone: pendingRegistration.phone,
-            password: pendingRegistration.password, // ⚠️ TODO: Hash com bcrypt
+            password: passwordHash, // ✅ Password com hash bcrypt
             subscribed: false,
             sub_until: null,
             plan_type: null,
