@@ -1185,6 +1185,8 @@ async function renderAccount(){
 
 /* ----------------- Carregar Dados de Referral do Utilizador ----------------- */
 async function loadReferralData(userEmail) {
+  console.log('🔄 Iniciando loadReferralData para:', userEmail);
+  
   // Buscar usuário completo do Supabase
   const { data: user, error } = await supabase
     .from('users')
@@ -1193,12 +1195,21 @@ async function loadReferralData(userEmail) {
     .single();
   
   if (error || !user) {
-    console.error('Erro ao carregar dados do usuário:', error);
+    console.error('❌ Erro ao carregar dados do usuário:', error);
     return;
   }
   
+  console.log('✅ Utilizador carregado:', user.name, user.email);
+  
   // Mostrar secção de referral
-  document.getElementById('referralSection').style.display = 'block';
+  const referralSection = document.getElementById('referralSection');
+  if (referralSection) {
+    referralSection.style.display = 'block';
+    console.log('✅ Secção de referral mostrada');
+  } else {
+    console.error('❌ Elemento referralSection não encontrado!');
+    return;
+  }
   
   // Mostrar código de referral
   const codeInput = document.getElementById('referralCodeInput');
@@ -1226,9 +1237,11 @@ async function loadReferralData(userEmail) {
     codeInput.value = user.referral_code;
     const fullLink = `${window.location.origin}${window.location.pathname}?ref=${user.referral_code}`;
     linkInput.value = fullLink;
+    console.log('✅ Código de referral configurado:', user.referral_code);
   } else {
     codeInput.value = 'Erro ao gerar código';
     linkInput.value = 'Contacta o suporte';
+    console.error('❌ Código de referral não disponível');
   }
   
   // Carregar pontos
@@ -1290,17 +1303,34 @@ async function loadReferralData(userEmail) {
     console.error('Erro ao carregar referências:', err);
   }
   
-  // Adicionar event listeners para copiar
+  // Adicionar event listeners para copiar (usando onclick para evitar duplicação)
+  const copyCodeBtn = document.getElementById('copyReferralCode');
+  const copyLinkBtn = document.getElementById('copyReferralLink');
+  
+  // Remover listeners antigos (se existirem) e adicionar novos
+  copyCodeBtn.replaceWith(copyCodeBtn.cloneNode(true));
+  copyLinkBtn.replaceWith(copyLinkBtn.cloneNode(true));
+  
   document.getElementById('copyReferralCode').addEventListener('click', () => {
     codeInput.select();
-    document.execCommand('copy');
-    alert('✅ Código copiado! Partilha com os teus amigos.');
+    navigator.clipboard.writeText(codeInput.value).then(() => {
+      alert('✅ Código copiado! Partilha com os teus amigos.');
+    }).catch(() => {
+      // Fallback para navegadores antigos
+      document.execCommand('copy');
+      alert('✅ Código copiado! Partilha com os teus amigos.');
+    });
   });
   
   document.getElementById('copyReferralLink').addEventListener('click', () => {
     linkInput.select();
-    document.execCommand('copy');
-    alert('✅ Link copiado! Envia para os teus amigos.');
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+      alert('✅ Link copiado! Envia para os teus amigos.');
+    }).catch(() => {
+      // Fallback para navegadores antigos
+      document.execCommand('copy');
+      alert('✅ Link copiado! Envia para os teus amigos.');
+    });
   });
 }
 
@@ -1451,9 +1481,12 @@ function initTabNavigation() {
       
       // Se for a aba de missões e o usuário estiver logado, carregar dados
       if (targetTab === 'missions') {
-        const currentUser = JSON.parse(localStorage.getItem('betai_current_user') || 'null');
-        if (currentUser && currentUser.email) {
-          loadReferralData(currentUser.email);
+        const userEmail = localStorage.getItem('betai_current_user_email');
+        if (userEmail) {
+          console.log('Carregando dados de referral para:', userEmail);
+          loadReferralData(userEmail);
+        } else {
+          console.log('Utilizador não está logado');
         }
       }
     });
