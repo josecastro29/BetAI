@@ -1,3 +1,14 @@
+// ⚠️ AVISO DE DESENVOLVIMENTO
+// Este código utiliza localStorage para desenvolvimento/protótipo.
+// NUNCA usar em produção! Implementar backend seguro antes do lançamento.
+//
+// Problemas de segurança conhecidos (temporários):
+// 1. Passwords em localStorage (deve ser hash bcrypt no backend)
+// 2. Validação de subscrição client-side (deve ser server-side)
+// 3. Dados facilmente editáveis (deve ser validado por API)
+//
+// Links Stripe são seguros e públicos (Payment Links oficiais).
+
 // Lógica simples baseada em regras para gerar recomendações + autenticação/pagamento simulado
 const survey = document.getElementById('survey');
 const advice = document.getElementById('advice');
@@ -385,6 +396,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 /* ----------------- Autenticação simples (localStorage) ----------------- */
+// ⚠️ ATENÇÃO: Sistema temporário para desenvolvimento
+// TODO: Implementar backend com:
+// - Hash bcrypt para passwords
+// - JWT tokens para sessões
+// - Validação server-side
+// - Rate limiting contra brute force
 function setupAuthUI(){
   // open modal
   openLogin.addEventListener('click',()=>authModal.classList.remove('hidden'));
@@ -437,6 +454,9 @@ function setCurrentUser(email){ localStorage.setItem('betai_current', email); }
 function getCurrentUser(){ const e = localStorage.getItem('betai_current'); return e ? getUser(e) : null; }
 
 function isSubscribed(user){
+  // ⚠️ TEMPORÁRIO: Validação client-side
+  // TODO: Validar no backend via API:
+  // fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${token}` } })
   if (!user) return false;
   if (user.subscribed && user.subUntil){
     const until = new Date(user.subUntil);
@@ -536,7 +556,10 @@ function cancelSubscription(user){
         '\n\nDepois dessa data, os benefícios serão desativados.');
 }
 
-/* ----------------- Pagamento simulado ----------------- */
+/* ----------------- Pagamento via Stripe Payment Links ----------------- */
+// ✅ SEGURO: Links públicos oficiais do Stripe
+// Stripe processa pagamentos de forma segura
+// TODO: Implementar webhooks para confirmação automática server-side
 closePayment.addEventListener('click',()=>paymentModal.classList.add('hidden'));
 
 function handlePayment(plan){
