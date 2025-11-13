@@ -165,6 +165,48 @@ const payBtns = document.getElementsByClassName('payBtn');
 
 function formatEuro(x){return '€'+Number(x).toFixed(2)}
 
+/* ----------------- Conceder Pontos por Questionário ----------------- */
+async function awardQuestionnairePoints(user) {
+  if (!user || !user.id) return;
+  
+  try {
+    // Verificar se já preencheu questionário hoje (opcional: limitar a 1x por dia)
+    const today = new Date().toISOString().split('T')[0];
+    const checkKey = `betai_questionnaire_${user.id}_${today}`;
+    
+    if (localStorage.getItem(checkKey)) {
+      console.log('Questionário já preenchido hoje - pontos já atribuídos');
+      return;
+    }
+    
+    // Adicionar pontos usando a função RPC do Supabase
+    const { error } = await supabase.rpc('add_referral_points', {
+      p_user_id: user.id,
+      p_points: 5,
+      p_reason: 'Preenchimento de questionário',
+      p_referral_id: null
+    });
+    
+    if (error) {
+      console.error('Erro ao conceder pontos:', error);
+    } else {
+      // Marcar como preenchido hoje
+      localStorage.setItem(checkKey, 'true');
+      
+      // Mostrar notificação
+      console.log('✅ +5 pontos concedidos por preencher questionário!');
+      
+      // Opcional: mostrar alerta visual
+      setTimeout(() => {
+        alert('🎉 +5 pontos! Ganhaste pontos por preencher o questionário.');
+      }, 1000);
+    }
+    
+  } catch (err) {
+    console.error('Erro ao processar pontos:', err);
+  }
+}
+
 survey.addEventListener('submit', async (e)=>{
   e.preventDefault();
   
@@ -228,6 +270,9 @@ survey.addEventListener('submit', async (e)=>{
   adviceContent.innerHTML = recommendation;
   advice.classList.remove('hidden');
   betBuilder.classList.remove('hidden');
+  
+  // Conceder +5 pontos por preencher questionário (primeira vez do dia ou sempre?)
+  await awardQuestionnairePoints(user);
 });
 
 resetBtn.addEventListener('click',()=>{
