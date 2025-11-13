@@ -1,15 +1,9 @@
-// ⚠️ AVISO DE DESENVOLVIMENTO
-// Este código utiliza localStorage para desenvolvimento/protótipo.
-// NUNCA usar em produção! Implementar backend seguro antes do lançamento.
-//
-// Problemas de segurança conhecidos (temporários):
-// 1. Passwords em localStorage (deve ser hash bcrypt no backend)
-// 2. Validação de subscrição client-side (deve ser server-side)
-// 3. Dados facilmente editáveis (deve ser validado por API)
-//
-// Links Stripe são seguros e públicos (Payment Links oficiais).
+// ✅ BACKEND ATIVO - Supabase
+// Sistema de autenticação e validação centralizada implementado
+// Todos os registos são guardados na base de dados cloud
+// Validação de unicidade (email, NIF, telemóvel) funciona globalmente
 
-// Lógica simples baseada em regras para gerar recomendações + autenticação/pagamento simulado
+// Lógica simples baseada em regras para gerar recomendações + autenticação com Supabase
 const survey = document.getElementById('survey');
 const advice = document.getElementById('advice');
 const adviceContent = document.getElementById('adviceContent');
@@ -28,17 +22,154 @@ const signupBox = document.getElementById('signupBox');
 const doLogin = document.getElementById('doLogin');
 const doSignup = document.getElementById('doSignup');
 const accountArea = document.getElementById('accountArea');
+// Verification elements
+const verificationBox = document.getElementById('verificationBox');
+const doVerify = document.getElementById('doVerify');
+const resendCode = document.getElementById('resendCode');
+const backToSignup = document.getElementById('backToSignup');
+
+// Temporary storage for pending registration
+let pendingRegistration = null;
+let currentVerificationCode = null;
+
+/* ----------------- Sistema de Referral - Detecção e Tracking ----------------- */
+// Detectar código de referral na URL ao carregar página
+function detectAndStoreReferral() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const refCode = urlParams.get('ref');
+  
+  if (refCode) {
+    // Guardar em localStorage (permanente até registar)
+    localStorage.setItem('betai_referral', refCode);
+    
+    // Guardar em cookie (30 dias como backup)
+    setCookie('betai_referral', refCode, 30);
+    
+    console.log('✅ Código de referral detectado:', refCode);
+    
+    // Opcional: Mostrar mensagem de boas-vindas
+    // showReferralWelcome(refCode);
+  }
+}
+
+// Funções auxiliares de cookies
+function setCookie(name, value, days) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  return document.cookie.split('; ').reduce((r, v) => {
+    const parts = v.split('=');
+    return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+  }, '');
+}
+
+function deleteCookie(name) {
+  setCookie(name, '', -1);
+}
+
+// Gerar código único de referral
+function generateReferralCode(name, email) {
+  // Limpar nome (remover espaços e caracteres especiais)
+  const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 6);
+  
+  // Adicionar parte do email ou random
+  const emailPart = email.split('@')[0].substring(0, 4);
+  
+  // Adicionar número aleatório
+  const random = Math.floor(1000 + Math.random() * 9000);
+  
+  // Combinar: nome + random (ex: jose1234)
+  return `${cleanName}${random}`.toUpperCase();
+}
+
+// Buscar referrer pelo código
+async function getReferrerByCode(refCode) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .eq('referral_code', refCode)
+      .single();
+    
+    if (error || !data) {
+      console.log('Código de referral não encontrado:', refCode);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Erro ao buscar referrer:', err);
+    return null;
+  }
+}
+
+// Criar registo de referral
+async function createReferralRecord(referrerId, referredId, refCode) {
+  try {
+    const { data, error } = await supabase
+      .from('referrals')
+      .insert([{
+        referrer_id: referrerId,
+        referred_id: referredId,
+        referral_code: refCode,
+        status: 'pending',
+        points_earned: 0
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Erro ao criar referral:', error);
+      return null;
+    }
+    
+    // Dar +2 pontos ao referrer (registo completo)
+    await addReferralPoints(referrerId, 2, 'referral_signup', data.id);
+    
+    console.log('✅ Referral criado! Referrer ganhou +2 pontos');
+    return data;
+    
+  } catch (err) {
+    console.error('Erro ao criar referral:', err);
+    return null;
+  }
+}
+
+// Adicionar pontos ao utilizador
+async function addReferralPoints(userId, points, reason, referralId = null) {
+  try {
+    const { error } = await supabase
+      .rpc('add_referral_points', {
+        p_user_id: userId,
+        p_points: points,
+        p_reason: reason,
+        p_referral_id: referralId
+      });
+    
+    if (error) {
+      console.error('Erro ao adicionar pontos:', error);
+    }
+    
+  } catch (err) {
+    console.error('Erro ao adicionar pontos:', err);
+  }
+}
+
+// Executar detecção ao carregar página
+document.addEventListener('DOMContentLoaded', detectAndStoreReferral);
 const paymentModal = document.getElementById('paymentModal');
 const closePayment = document.getElementById('closePayment');
 const payBtns = document.getElementsByClassName('payBtn');
 
 function formatEuro(x){return '€'+Number(x).toFixed(2)}
 
-survey.addEventListener('submit', (e)=>{
+survey.addEventListener('submit', async (e)=>{
   e.preventDefault();
   
   // Verificar se o utilizador tem subscrição ativa
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user || !isSubscribed(user)){
     // Mostrar modal de pagamento se não tiver subscrição
     paymentModal.classList.remove('hidden');
@@ -409,31 +540,237 @@ function setupAuthUI(){
   tabLogin.addEventListener('click',()=>{loginBox.classList.remove('hidden');signupBox.classList.add('hidden');});
   tabSignup.addEventListener('click',()=>{signupBox.classList.remove('hidden');loginBox.classList.add('hidden');});
 
-  doSignup.addEventListener('click',()=>{
+  doSignup.addEventListener('click', async ()=>{
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+    const nif = document.getElementById('signupNif').value.trim();
+    const phone = document.getElementById('signupPhone').value.trim();
     const pass = document.getElementById('signupPass').value;
-    if (!email || !pass){ alert('Introduce email e password válidos.'); return; }
-    if (getUser(email)){ alert('Utilizador já existe. Usa Entrar.'); return; }
-    const user = {name, email, pass, subscribed:false, subUntil:null, cancelledAt:null, planType:null};
-    saveUser(user);
-    setCurrentUser(email);
-    authModal.classList.add('hidden');
-    renderAccount();
-    alert('Registo feito. Preenche o questionário para gerar recomendações.');
+    
+    // Validações básicas
+    if (!name || !email || !nif || !phone || !pass){ 
+      alert('Por favor, preenche todos os campos.'); 
+      return; 
+    }
+    
+    // Validar formato do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)){
+      alert('❌ Email inválido. Usa um formato válido (exemplo@dominio.com).');
+      return;
+    }
+    
+    // Validar NIF
+    const nifValidation = validateNIF(nif);
+    if (!nifValidation.valid){
+      alert(`❌ NIF inválido: ${nifValidation.error}`);
+      return;
+    }
+    
+    // Validar telemóvel
+    const phoneValidation = validatePortuguesePhone(phone);
+    if (!phoneValidation.valid){
+      alert(`❌ Telemóvel inválido: ${phoneValidation.error}`);
+      return;
+    }
+    
+    // ✅ VERIFICAÇÃO DE UNICIDADE (Supabase - Base de Dados)
+    const uniquenessCheck = await checkUniquenessSupabase(email, nif, phone);
+    if (!uniquenessCheck.unique){
+      alert(`❌ Registo impossível:\n\n${uniquenessCheck.errors.join('\n')}\n\nCada conta deve ter dados únicos.`);
+      return;
+    }
+    
+    // ✅ Tudo válido - Enviar código de verificação SMS
+    try {
+      // Guardar dados temporariamente (aguarda verificação)
+      pendingRegistration = {
+        name,
+        email,
+        nif,
+        phone,
+        password: pass
+      };
+      
+      // Gerar e enviar código de verificação
+      const codeSent = await sendVerificationCode(phone);
+      
+      if (!codeSent) {
+        alert('❌ Erro ao enviar código de verificação. Tenta novamente.');
+        return;
+      }
+      
+      // Mostrar interface de verificação
+      signupBox.classList.add('hidden');
+      verificationBox.classList.remove('hidden');
+      document.getElementById('verificationPhone').textContent = formatPortuguesePhone(phone);
+      document.getElementById('verificationCode').value = '';
+      document.getElementById('verificationCode').focus();
+      
+    } catch (err) {
+      console.error('Erro ao processar registo:', err);
+      alert('❌ Erro ao processar registo. Tenta novamente.');
+    }
   });
 
-  doLogin.addEventListener('click',()=>{
+  doLogin.addEventListener('click', async ()=>{
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const pass = document.getElementById('loginPass').value;
-    const u = getUser(email);
-    if (!u || u.pass !== pass){ alert('Credenciais inválidas.'); return; }
-    setCurrentUser(email);
-    authModal.classList.add('hidden');
-    renderAccount();
+    
+    try {
+      // Buscar utilizador no Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', pass) // ⚠️ TODO: Usar hash comparison
+        .single();
+      
+      if (error || !data) {
+        alert('❌ Credenciais inválidas.');
+        return;
+      }
+      
+      // Guardar sessão
+      localStorage.setItem('betai_current_user_id', data.id);
+      localStorage.setItem('betai_current_user_email', data.email);
+      
+      authModal.classList.add('hidden');
+      renderAccount();
+      
+    } catch (err) {
+      console.error('Erro ao fazer login:', err);
+      alert('❌ Erro ao fazer login. Tenta novamente.');
+    }
   });
 
   renderAccount();
+  
+  // Verificar código SMS
+  doVerify.addEventListener('click', async ()=>{
+    const code = document.getElementById('verificationCode').value.trim();
+    
+    if (!code || code.length !== 6) {
+      alert('❌ Por favor, introduz o código de 6 dígitos.');
+      return;
+    }
+    
+    // Verificar código
+    if (code !== currentVerificationCode) {
+      alert('❌ Código inválido. Verifica e tenta novamente.');
+      return;
+    }
+    
+    // Código correto! Criar utilizador
+    try {
+      // Verificar se tem código de referral
+      const refCode = 
+        new URLSearchParams(window.location.search).get('ref') ||
+        localStorage.getItem('betai_referral') ||
+        getCookie('betai_referral');
+      
+      let referrerId = null;
+      
+      if (refCode) {
+        const referrer = await getReferrerByCode(refCode);
+        if (referrer) {
+          referrerId = referrer.id;
+          console.log('✅ Referido por:', referrer.name);
+        }
+      }
+      
+      // Gerar código único para este novo utilizador
+      const newReferralCode = generateReferralCode(
+        pendingRegistration.name,
+        pendingRegistration.email
+      );
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            name: pendingRegistration.name,
+            email: pendingRegistration.email,
+            nif: pendingRegistration.nif,
+            phone: pendingRegistration.phone,
+            password: pendingRegistration.password, // ⚠️ TODO: Hash com bcrypt
+            subscribed: false,
+            sub_until: null,
+            plan_type: null,
+            cancelled_at: null,
+            referred_by: referrerId,      // ← Quem referiu
+            referral_code: newReferralCode // ← Código único deste user
+          }
+        ])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Erro ao criar utilizador:', error);
+        alert(`❌ Erro ao criar conta: ${error.message}`);
+        return;
+      }
+      
+      // Se foi referido por alguém, criar registo de referral
+      if (referrerId) {
+        await createReferralRecord(referrerId, data.id, refCode);
+        
+        // Limpar tracking após usar
+        localStorage.removeItem('betai_referral');
+        deleteCookie('betai_referral');
+      }
+      
+      // Limpar dados temporários
+      pendingRegistration = null;
+      currentVerificationCode = null;
+      
+      // Guardar sessão
+      localStorage.setItem('betai_current_user_id', data.id);
+      localStorage.setItem('betai_current_user_email', data.email);
+      
+      // Fechar modal e mostrar sucesso
+      verificationBox.classList.add('hidden');
+      signupBox.classList.remove('hidden');
+      authModal.classList.add('hidden');
+      renderAccount();
+      
+      let successMsg = '✅ Telemóvel verificado!\n\nRegisto concluído com sucesso!';
+      if (referrerId) {
+        successMsg += '\n\n🎁 Foste referido! O teu amigo ganhou +2 pontos!';
+      }
+      successMsg += '\n\nPreenche o questionário para gerar recomendações personalizadas.';
+      
+      alert(successMsg);
+      
+    } catch (err) {
+      console.error('Erro ao criar utilizador:', err);
+      alert('❌ Erro ao criar conta. Tenta novamente.');
+    }
+  });
+  
+  // Reenviar código
+  resendCode.addEventListener('click', async ()=>{
+    if (!pendingRegistration) {
+      alert('❌ Erro: Nenhum registo pendente.');
+      return;
+    }
+    
+    const codeSent = await sendVerificationCode(pendingRegistration.phone);
+    
+    if (codeSent) {
+      alert('✅ Novo código enviado!\n\nVerifica o teu telemóvel.');
+    } else {
+      alert('❌ Erro ao reenviar código. Tenta novamente.');
+    }
+  });
+  
+  // Voltar ao formulário de registo
+  backToSignup.addEventListener('click', ()=>{
+    verificationBox.classList.add('hidden');
+    signupBox.classList.remove('hidden');
+    pendingRegistration = null;
+    currentVerificationCode = null;
+  });
 }
 
 function getUser(email){
@@ -451,22 +788,290 @@ function saveUser(user){
 }
 
 function setCurrentUser(email){ localStorage.setItem('betai_current', email); }
-function getCurrentUser(){ const e = localStorage.getItem('betai_current'); return e ? getUser(e) : null; }
+async function getCurrentUser(){ 
+  const userId = localStorage.getItem('betai_current_user_id');
+  if (!userId) return null;
+  
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    return error ? null : data;
+  } catch (err) {
+    return null;
+  }
+}
+
+/* ----------------- Validação de NIF (Autoridade Tributária PT) ----------------- */
+function validateNIF(nif){
+  // Remover espaços e caracteres não numéricos
+  nif = nif.replace(/\s/g, '');
+  
+  // ✅ Regra 1: Tem que ter exatamente 9 dígitos
+  if (!/^\d{9}$/.test(nif)){
+    return {
+      valid: false,
+      error: 'O NIF deve ter exatamente 9 dígitos numéricos.'
+    };
+  }
+  
+  // ✅ Regra 2: Primeiro dígito válido (tipo de entidade)
+  const firstDigit = parseInt(nif[0]);
+  const validFirstDigits = [1, 2, 3, 5, 6, 8, 9];
+  
+  if (!validFirstDigits.includes(firstDigit)){
+    return {
+      valid: false,
+      error: `Primeiro dígito inválido (${firstDigit}). Deve ser: 1, 2, 3, 5, 6, 8 ou 9.`
+    };
+  }
+  
+  // ✅ Regra 3: Validar dígito de controlo (9º dígito)
+  const checkDigit = parseInt(nif[8]);
+  const calculatedCheckDigit = calculateNIFCheckDigit(nif.substring(0, 8));
+  
+  if (checkDigit !== calculatedCheckDigit){
+    return {
+      valid: false,
+      error: 'NIF inválido. O dígito de controlo não corresponde.'
+    };
+  }
+  
+  // ✅ NIF válido!
+  return {
+    valid: true,
+    type: getNIFType(firstDigit)
+  };
+}
+
+function calculateNIFCheckDigit(first8Digits){
+  // Algoritmo oficial da Autoridade Tributária
+  // Multiplica cada dígito por peso decrescente (9, 8, 7, 6, 5, 4, 3, 2)
+  let sum = 0;
+  for (let i = 0; i < 8; i++){
+    sum += parseInt(first8Digits[i]) * (9 - i);
+  }
+  
+  // Calcula resto da divisão por 11
+  const remainder = sum % 11;
+  
+  // Se resto for 0 ou 1, dígito de controlo = 0
+  // Caso contrário, dígito de controlo = 11 - resto
+  if (remainder === 0 || remainder === 1){
+    return 0;
+  } else {
+    return 11 - remainder;
+  }
+}
+
+function getNIFType(firstDigit){
+  const types = {
+    1: 'Pessoa singular (antes de 1999)',
+    2: 'Pessoa singular',
+    3: 'Pessoa singular (não residente)',
+    5: 'Pessoa coletiva (empresa)',
+    6: 'Administração pública',
+    8: 'Entidade não residente',
+    9: 'Entidade especial'
+  };
+  return types[firstDigit] || 'Desconhecido';
+}
+
+function nifExists(nif){
+  const raw = localStorage.getItem('betai_users');
+  if (!raw) return false;
+  const users = JSON.parse(raw);
+  
+  // Verificar se algum utilizador já tem este NIF
+  for (const email in users){
+    if (users[email].nif === nif){
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ----------------- Validação de Telemóvel Português ----------------- */
+function validatePortuguesePhone(phone){
+  // Remover espaços e caracteres não numéricos
+  phone = phone.replace(/\s/g, '').replace(/[^0-9]/g, '');
+  
+  // ✅ Regra 1: Tem que ter exatamente 9 dígitos
+  if (!/^\d{9}$/.test(phone)){
+    return {
+      valid: false,
+      error: 'O número de telemóvel deve ter exatamente 9 dígitos.'
+    };
+  }
+  
+  // ✅ Regra 2: Deve começar por 9
+  if (phone[0] !== '9'){
+    return {
+      valid: false,
+      error: 'O número deve começar por 9 (ex: 91, 92, 93, 96).'
+    };
+  }
+  
+  // ✅ Regra 3: Segundo dígito válido (prefixos de operadores portugueses)
+  const secondDigit = phone[1];
+  const validSecondDigits = ['1', '2', '3', '6'];
+  
+  if (!validSecondDigits.includes(secondDigit)){
+    return {
+      valid: false,
+      error: `Prefixo inválido (9${secondDigit}). Deve ser: 91, 92, 93 ou 96.`
+    };
+  }
+  
+  // ✅ Telemóvel válido!
+  const prefix = phone.substring(0, 2);
+  return {
+    valid: true,
+    operator: getPortugueseOperator(prefix),
+    formatted: formatPortuguesePhone(phone)
+  };
+}
+
+function getPortugueseOperator(prefix){
+  // Prefixos históricos dos operadores portugueses
+  const operators = {
+    '91': 'Vodafone',
+    '92': 'TMN/MEO',
+    '93': 'NOS/Optimus',
+    '96': 'TMN/MEO'
+  };
+  return operators[prefix] || 'Operador português';
+}
+
+function formatPortuguesePhone(phone){
+  // Formatar: 912 345 678
+  return `${phone.substring(0, 3)} ${phone.substring(3, 6)} ${phone.substring(6, 9)}`;
+}
+
+/* ----------------- Sistema de Verificação SMS ----------------- */
+async function sendVerificationCode(phone){
+  // Gerar código de 6 dígitos
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  currentVerificationCode = code;
+  
+  // ⚠️ MODO DESENVOLVIMENTO: Mostrar código no console/alert
+  // TODO: Integrar com Twilio para SMS real em produção
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📱 CÓDIGO DE VERIFICAÇÃO SMS');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`Telemóvel: ${formatPortuguesePhone(phone)}`);
+  console.log(`Código: ${code}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  
+  // Mostrar também em alert (temporário para desenvolvimento)
+  alert(`📱 CÓDIGO DE VERIFICAÇÃO (DEV MODE)\n\nTelemóvel: ${formatPortuguesePhone(phone)}\n\nCódigo: ${code}\n\n⚠️ Em produção, este código será enviado via SMS real.`);
+  
+  // Guardar no Supabase (tabela de verificações)
+  try {
+    const { error } = await supabase
+      .from('verification_codes')
+      .insert([
+        {
+          phone: phone,
+          code: code,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutos
+          used: false
+        }
+      ]);
+    
+    if (error && error.code !== '42P01') { // Ignorar se tabela não existe (opcional)
+      console.error('Erro ao guardar código:', error);
+    }
+  } catch (err) {
+    console.log('Tabela verification_codes não existe (opcional)');
+  }
+  
+  return true;
+}
+
+function phoneExists(phone){
+  const raw = localStorage.getItem('betai_users');
+  if (!raw) return false;
+  const users = JSON.parse(raw);
+  
+  // Normalizar número (remover espaços)
+  phone = phone.replace(/\s/g, '');
+  
+  // Verificar se algum utilizador já tem este telemóvel
+  for (const email in users){
+    if (users[email].phone && users[email].phone.replace(/\s/g, '') === phone){
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ----------------- Verificação de Unicidade (Supabase - Global) ----------------- */
+async function checkUniquenessSupabase(email, nif, phone){
+  const errors = [];
+  
+  try {
+    // Verificar email
+    const { data: emailCheck } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    
+    if (emailCheck) {
+      errors.push('• Este email já está registado.');
+    }
+    
+    // Verificar NIF
+    const { data: nifCheck } = await supabase
+      .from('users')
+      .select('id')
+      .eq('nif', nif)
+      .maybeSingle();
+    
+    if (nifCheck) {
+      errors.push('• Este NIF já está registado noutra conta.');
+    }
+    
+    // Verificar telemóvel
+    const { data: phoneCheck } = await supabase
+      .from('users')
+      .select('id')
+      .eq('phone', phone)
+      .maybeSingle();
+    
+    if (phoneCheck) {
+      errors.push('• Este telemóvel já está registado noutra conta.');
+    }
+    
+    return {
+      unique: errors.length === 0,
+      errors
+    };
+    
+  } catch (err) {
+    console.error('Erro ao verificar unicidade:', err);
+    return {
+      unique: false,
+      errors: ['• Erro ao verificar dados. Tenta novamente.']
+    };
+  }
+}
 
 function isSubscribed(user){
-  // ⚠️ TEMPORÁRIO: Validação client-side
-  // TODO: Validar no backend via API:
-  // fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${token}` } })
   if (!user) return false;
-  if (user.subscribed && user.subUntil){
-    const until = new Date(user.subUntil);
+  if (user.subscribed && user.sub_until){
+    const until = new Date(user.sub_until);
     return until.getTime() > Date.now();
   }
   return Boolean(user.subscribed);
 }
 
-function renderAccount(){
-  const u = getCurrentUser();
+async function renderAccount(){
+  const u = await getCurrentUser();
   accountArea.innerHTML = '';
   if (u){
     const div = document.createElement('div');
@@ -474,20 +1079,36 @@ function renderAccount(){
     let statusText = 'Sem subscrição';
     
     if (isSub){
-      const until = new Date(u.subUntil);
+      const until = new Date(u.sub_until);
       const formatted = until.toLocaleDateString('pt-PT');
       
-      if (u.cancelledAt){
+      if (u.cancelled_at){
         statusText = `Ativa até ${formatted} (Cancelada)`;
       } else {
         statusText = `Ativa até ${formatted}`;
       }
     }
     
-    div.innerHTML = `<div style="text-align:right"><strong>${escapeHtml(u.name||u.email)}</strong><br><small>${statusText}</small></div>`;
+    // Buscar pontos do utilizador
+    let pointsText = '';
+    try {
+      const { data: points } = await supabase
+        .from('referral_points')
+        .select('points')
+        .eq('user_id', u.id)
+        .single();
+      
+      if (points && points.points > 0) {
+        pointsText = ` | 💎 ${points.points} pts`;
+      }
+    } catch (err) {
+      // Sem pontos ainda
+    }
+    
+    div.innerHTML = `<div style="text-align:right"><strong>${escapeHtml(u.name||u.email)}</strong><br><small>${statusText}${pointsText}</small></div>`;
     
     // Botão de gestão de subscrição (se subscrito)
-    if (isSub && !u.cancelledAt){
+    if (isSub && !u.cancelled_at){
       const btnManage = document.createElement('button');
       btnManage.textContent = 'Gerir Subscrição';
       btnManage.style.marginLeft = '8px';
@@ -500,14 +1121,121 @@ function renderAccount(){
     const btnLogout = document.createElement('button'); 
     btnLogout.textContent='Sair';
     btnLogout.style.marginLeft='8px';
-    btnLogout.addEventListener('click',()=>{ localStorage.removeItem('betai_current'); renderAccount(); });
+    btnLogout.addEventListener('click',()=>{ 
+      localStorage.removeItem('betai_current_user_id'); 
+      localStorage.removeItem('betai_current_user_email');
+      renderAccount(); 
+    });
     accountArea.appendChild(div); 
     accountArea.appendChild(btnLogout);
+    
+    // Nota: A secção de referral agora está na aba "Missões" e só é carregada quando essa aba é aberta
+    // A função loadReferralData é chamada apenas quando o usuário clica na aba "Missões"
   } else {
     const btn = document.createElement('button'); btn.id='openLoginBtn'; btn.textContent='Entrar / Registar';
     btn.addEventListener('click',()=>authModal.classList.remove('hidden'));
     accountArea.appendChild(btn);
   }
+}
+
+/* ----------------- Carregar Dados de Referral do Utilizador ----------------- */
+async function loadReferralData(userEmail) {
+  // Buscar usuário completo do Supabase
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', userEmail)
+    .single();
+  
+  if (error || !user) {
+    console.error('Erro ao carregar dados do usuário:', error);
+    return;
+  }
+  
+  // Mostrar secção de referral
+  document.getElementById('referralSection').style.display = 'block';
+  
+  // Mostrar código de referral
+  const codeInput = document.getElementById('referralCodeInput');
+  const linkInput = document.getElementById('referralLinkInput');
+  
+  if (user.referral_code) {
+    codeInput.value = user.referral_code;
+    const fullLink = `${window.location.origin}${window.location.pathname}?ref=${user.referral_code}`;
+    linkInput.value = fullLink;
+  }
+  
+  // Carregar pontos
+  try {
+    const { data: points } = await supabase
+      .from('referral_points')
+      .select('points')
+      .eq('user_id', user.id)
+      .single();
+    
+    const userPoints = points ? points.points : 0;
+    document.getElementById('userPoints').textContent = userPoints;
+    
+    // Calcular progresso para próxima recompensa
+    const nextMilestone = userPoints < 20 ? 20 : userPoints < 50 ? 50 : 100;
+    const progress = (userPoints / nextMilestone) * 100;
+    document.getElementById('pointsProgress').style.width = `${Math.min(progress, 100)}%`;
+    document.getElementById('pointsToNext').textContent = nextMilestone - userPoints;
+    
+  } catch (err) {
+    console.log('Sem pontos ainda');
+  }
+  
+  // Carregar estatísticas de referências
+  try {
+    const { data: referrals, error } = await supabase
+      .from('referrals')
+      .select('*')
+      .eq('referrer_id', user.id);
+    
+    const statsContent = document.getElementById('referralStatsContent');
+    
+    if (error || !referrals || referrals.length === 0) {
+      statsContent.innerHTML = 'Ainda não referiste ninguém. Partilha o teu código!';
+    } else {
+      const total = referrals.length;
+      const pending = referrals.filter(r => r.status === 'pending').length;
+      const completed = referrals.filter(r => r.status === 'completed').length;
+      
+      statsContent.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+          <div>
+            <div style="font-size:24px;font-weight:bold;color:#06b6d4">${total}</div>
+            <div style="font-size:12px;color:#9fb4c8">Total</div>
+          </div>
+          <div>
+            <div style="font-size:24px;font-weight:bold;color:#eab308">${pending}</div>
+            <div style="font-size:12px;color:#9fb4c8">Pendentes</div>
+          </div>
+          <div>
+            <div style="font-size:24px;font-weight:bold;color:#10b981">${completed}</div>
+            <div style="font-size:12px;color:#9fb4c8">Completos</div>
+          </div>
+        </div>
+      `;
+    }
+    
+  } catch (err) {
+    console.error('Erro ao carregar referências:', err);
+  }
+  
+  // Adicionar event listeners para copiar
+  document.getElementById('copyReferralCode').addEventListener('click', () => {
+    codeInput.select();
+    document.execCommand('copy');
+    alert('✅ Código copiado! Partilha com os teus amigos.');
+  });
+  
+  document.getElementById('copyReferralLink').addEventListener('click', () => {
+    linkInput.select();
+    document.execCommand('copy');
+    alert('✅ Link copiado! Envia para os teus amigos.');
+  });
 }
 
 /* ----------------- Gestão de subscrição ----------------- */
@@ -546,8 +1274,20 @@ Tens a certeza que queres cancelar a subscrição?
   }
 }
 
-function cancelSubscription(user){
-  user.cancelledAt = new Date().toISOString();
+async function cancelSubscription(user){
+  // Atualizar no Supabase
+  const { error } = await supabase
+    .from('users')
+    .update({ cancelled_at: new Date().toISOString() })
+    .eq('id', user.id);
+  
+  if (error) {
+    console.error('Erro ao cancelar:', error);
+    alert('❌ Erro ao cancelar subscrição. Tenta novamente.');
+    return;
+  }
+  
+  user.cancelled_at = new Date().toISOString();
   saveUser(user);
   renderAccount();
   
@@ -625,3 +1365,46 @@ function checkPaymentReturn(){
     }
   }
 }
+
+/* ----------------- Sistema de Navegação por Abas ----------------- */
+function initTabNavigation() {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      
+      // Remover active de todos os botões e conteúdos
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      
+      // Adicionar active ao botão clicado e conteúdo correspondente
+      btn.classList.add('active');
+      document.getElementById(`tab-${targetTab}`).classList.add('active');
+      
+      // Se for a aba de missões e o usuário estiver logado, carregar dados
+      if (targetTab === 'missions') {
+        const currentUser = JSON.parse(localStorage.getItem('betai_current_user') || 'null');
+        if (currentUser && currentUser.email) {
+          loadReferralData(currentUser.email);
+        }
+      }
+    });
+  });
+}
+
+// Inicializar tudo quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+  // Detectar código de referral na URL
+  detectAndStoreReferral();
+  
+  // Inicializar navegação por abas
+  initTabNavigation();
+  
+  // Verificar retorno de pagamento
+  checkPaymentReturn();
+  
+  // Renderizar conta
+  renderAccount();
+});

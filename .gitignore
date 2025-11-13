@@ -4,7 +4,7 @@
 .env.production
 
 # Configurações privadas
-config.js
+# config.js - Comentado temporariamente (chaves públicas Supabase são seguras)
 secrets.js
 
 # Node modules (se usares backend no futuro)

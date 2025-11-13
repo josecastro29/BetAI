@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>BetAI — Planeador de Apostas</title>
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Configuração -->
+  <script src="config.js"></script>
 </head>
 <body>
   <div class="container">
@@ -21,7 +27,15 @@
       </div>
     </header>
 
+    <!-- Sistema de Navegação por Abas -->
+    <nav class="tabs-navigation">
+      <button class="tab-btn active" data-tab="main">🎯 Principal</button>
+      <button class="tab-btn" data-tab="missions">🎁 Missões</button>
+    </nav>
+
     <main>
+      <!-- ABA PRINCIPAL -->
+      <div id="tab-main" class="tab-content active">
       <section class="card">
         <h2>Questionário</h2>
         <form id="survey">
@@ -250,10 +264,36 @@
             <div class="actions"><button id="doLogin">Entrar</button></div>
           </div>
           <div id="signupBox" class="hidden">
-            <label>Nome<input id="signupName" type="text"></label>
-            <label>Email<input id="signupEmail" type="text"></label>
-            <label>Password<input id="signupPass" type="password"></label>
-            <div class="actions"><button id="doSignup">Registar</button></div>
+            <label>Nome<input id="signupName" type="text" required></label>
+            <label>Email<input id="signupEmail" type="email" required></label>
+            <label>NIF (Número de Identificação Fiscal)
+              <input id="signupNif" type="text" maxlength="9" pattern="[0-9]{9}" placeholder="123456789" required>
+              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">9 dígitos sem espaços</small>
+            </label>
+            <label>Telemóvel
+              <input id="signupPhone" type="tel" maxlength="9" pattern="9[1236][0-9]{7}" placeholder="912345678" required>
+              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">9 dígitos (ex: 91, 92, 93 ou 96)</small>
+            </label>
+            <label>Password<input id="signupPass" type="password" required></label>
+            <div class="actions"><button id="doSignup">Enviar Código de Verificação</button></div>
+          </div>
+          
+          <!-- Caixa de Verificação de Código SMS -->
+          <div id="verificationBox" class="hidden">
+            <h4 style="color:#06b6d4;margin-top:0">📱 Verificação de Telemóvel</h4>
+            <p style="font-size:13px;color:#9fb4c8;margin-bottom:16px">
+              Enviámos um código de 6 dígitos para o teu telemóvel<br>
+              <strong id="verificationPhone"></strong>
+            </p>
+            <label>Código de Verificação
+              <input id="verificationCode" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="123456" autocomplete="off" required>
+              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">Introduz o código que recebeste</small>
+            </label>
+            <div class="actions">
+              <button id="doVerify">Verificar e Concluir Registo</button>
+              <button id="resendCode" style="background:#374151;margin-left:8px">Reenviar Código</button>
+            </div>
+            <button id="backToSignup" style="background:transparent;border:1px solid #374151;width:100%;margin-top:8px;font-size:12px">← Voltar</button>
           </div>
         </div>
       </div>
@@ -353,6 +393,80 @@
         <h3>Aviso e ética</h3>
         <p>Esta ferramenta é meramente informativa. Aconselha-se responsabilidade financeira. Não sou um consultor financeiro. As apostas envolvem risco de perda total do capital.</p>
       </section>
+      </div>
+      <!-- FIM ABA PRINCIPAL -->
+
+      <!-- ABA MISSÕES -->
+      <div id="tab-missions" class="tab-content">
+      <section id="referralSection" class="card">
+        <h2>🎁 Programa de Referência</h2>
+        
+        <div style="background:rgba(6,182,212,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+          <h3 style="color:#06b6d4;margin:0 0 12px 0">Teu Código de Referência</h3>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <input id="referralCodeInput" type="text" readonly style="flex:1;font-size:18px;font-weight:bold;text-align:center;color:#06b6d4;background:rgba(0,0,0,0.3);border:2px solid #06b6d4;padding:12px">
+            <button id="copyReferralCode" style="padding:12px 20px;background:#06b6d4">📋 Copiar</button>
+          </div>
+          <input id="referralLinkInput" type="text" readonly style="width:100%;font-size:13px;background:rgba(0,0,0,0.3);border:1px solid #374151;padding:8px;margin-top:8px">
+          <button id="copyReferralLink" style="width:100%;margin-top:8px;background:#10b981">🔗 Copiar Link Completo</button>
+        </div>
+
+        <div style="background:rgba(16,185,129,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+          <h3 style="color:#10b981;margin:0 0 12px 0">💎 Teus Pontos</h3>
+          <div style="font-size:32px;font-weight:bold;color:#10b981;text-align:center;margin:12px 0">
+            <span id="userPoints">0</span> <span style="font-size:18px">pontos</span>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;height:12px;margin:12px 0;overflow:hidden">
+            <div id="pointsProgress" style="background:linear-gradient(90deg,#10b981,#06b6d4);height:100%;width:0%;transition:width 0.5s"></div>
+          </div>
+          <p style="text-align:center;margin:0;font-size:13px;color:#9fb4c8">
+            <span id="pointsToNext">20</span> pontos para próxima recompensa (5€)
+          </p>
+        </div>
+
+        <div style="background:rgba(168,85,247,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+          <h3 style="color:#a855f7;margin:0 0 12px 0">🎯 Como Ganhar Pontos</h3>
+          <div style="display:grid;gap:12px">
+            <div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+              <span>🆕 Novo registo</span>
+              <strong style="color:#10b981">+2 pts</strong>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+              <span>💳 Subscrição mensal</span>
+              <strong style="color:#06b6d4">+6 pts</strong>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+              <span>👑 Subscrição anual</span>
+              <strong style="color:#a855f7">+10 pts</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(234,179,8,0.1);padding:16px;border-radius:8px">
+          <h3 style="color:#eab308;margin:0 0 12px 0">🏆 Recompensas</h3>
+          <div style="display:grid;gap:8px;font-size:14px">
+            <div style="padding:8px;background:rgba(0,0,0,0.3);border-radius:4px;display:flex;justify-content:space-between">
+              <span>20 pontos</span>
+              <strong style="color:#eab308">5€</strong>
+            </div>
+            <div style="padding:8px;background:rgba(0,0,0,0.3);border-radius:4px;display:flex;justify-content:space-between">
+              <span>50 pontos</span>
+              <strong style="color:#eab308">15€</strong>
+            </div>
+            <div style="padding:8px;background:rgba(0,0,0,0.3);border-radius:4px;display:flex;justify-content:space-between">
+              <span>100 pontos</span>
+              <strong style="color:#eab308">35€</strong>
+            </div>
+          </div>
+        </div>
+
+        <div id="referralStats" style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.02);border-radius:8px">
+          <h4 style="color:#06b6d4;margin:0 0 12px 0">📊 Tuas Referências</h4>
+          <p style="text-align:center;color:#9fb4c8" id="referralStatsContent">Carregando...</p>
+        </div>
+      </section>
+      </div>
+      <!-- FIM ABA MISSÕES -->
 
     </main>
 
