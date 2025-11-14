@@ -3,8 +3,13 @@
 // Todos os registos são guardados na base de dados cloud
 // Validação de unicidade (email, NIF, telemóvel) funciona globalmente
 
-// Configurar bcrypt globalmente
-const bcrypt = window.dcodeIO?.bcrypt || window.bcrypt;
+// Aguardar carregamento do bcrypt
+let bcrypt;
+if (typeof window.dcodeIO !== 'undefined' && window.dcodeIO.bcrypt) {
+  bcrypt = window.dcodeIO.bcrypt;
+} else if (typeof window.bcrypt !== 'undefined') {
+  bcrypt = window.bcrypt;
+}
 
 // Lógica simples baseada em regras para gerar recomendações + autenticação com Supabase
 const survey = document.getElementById('survey');
