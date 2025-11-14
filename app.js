@@ -1844,7 +1844,7 @@ async function confirmRedemption() {
     
     const paymentDetails = { iban, accountName };
     
-    // Obter user_id
+    // Obter user_id e verificar pontos atuais
     const userEmail = localStorage.getItem('betai_current_user_email');
     const { data: user } = await supabase
       .from('users')
@@ -1857,13 +1857,30 @@ async function confirmRedemption() {
       return;
     }
     
+    // ✅ VALIDAÇÃO: Verificar se tem pontos suficientes ANTES de processar
+    const { data: pointsData } = await supabase
+      .from('referral_points')
+      .select('points')
+      .eq('user_id', user.id)
+      .single();
+    
+    const currentPoints = pointsData ? pointsData.points : 0;
+    
+    if (currentPoints < selectedRedemption.points) {
+      alert(`❌ Pontos insuficientes!\n\nTens: ${currentPoints} pontos\nNecessário: ${selectedRedemption.points} pontos\n\nFalta: ${selectedRedemption.points - currentPoints} pontos`);
+      
+      // Recarregar dados para atualizar interface
+      await loadReferralData(userEmail);
+      return;
+    }
+    
     // Desabilitar botão
     btn.disabled = true;
-    btn.textContent = '⏳ Processando...';
+    btn.textContent = '⏳ Criando resgate...';
     btn.style.opacity = '0.6';
     
-    // Chamar função SQL para criar resgate
-    const { data, error } = await supabase.rpc('request_redemption', {
+    // PASSO 1: Chamar função SQL para criar resgate
+    const { data: redemptionId, error } = await supabase.rpc('request_redemption', {
       p_user_id: user.id,
       p_points: selectedRedemption.points,
       p_payment_method: 'Transferência Bancária',
@@ -1872,18 +1889,84 @@ async function confirmRedemption() {
     
     if (error) {
       console.error('Erro ao criar resgate:', error);
-      alert('❌ Erro: ' + error.message);
+      
+      // Mensagem de erro mais clara
+      if (error.message.includes('Pontos insuficientes')) {
+        alert(`❌ ${error.message}\n\nAtualiza a página e tenta novamente.`);
+        await loadReferralData(userEmail);
+      } else {
+        alert('❌ Erro: ' + error.message);
+      }
+      
       btn.disabled = false;
       btn.textContent = originalText;
       btn.style.opacity = '1';
       return;
     }
     
-    // Sucesso!
-    alert(`✅ Resgate de ${selectedRedemption.points} pontos (${selectedRedemption.amount}€) solicitado com sucesso!\n\n` +
-          `Método: Transferência Bancária\n` +
-          `IBAN: ${iban}\n` +
-          `Será processado em até 48h úteis.`);
+    console.log('✅ Resgate criado com ID:', redemptionId);
+    
+    // PASSO 2: Enviar email de notificação para o admin
+    btn.textContent = '📧 Enviando notificação...';
+    
+    try {
+      await fetch('https://betai-one.vercel.app/api/send-redemption-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          redemption_id: redemptionId
+        })
+      });
+      
+      console.log('✅ Email enviado para admin');
+    } catch (emailError) {
+      console.error('⚠️ Erro ao enviar email (não crítico):', emailError);
+      // Não bloquear o processo se o email falhar
+    }
+    
+    // PASSO 3: Processar pagamento automático via Stripe (se configurado)
+    btn.textContent = '💳 Processando pagamento...';
+    
+    try {
+      const payoutResponse = await fetch('https://betai-one.vercel.app/api/process-payout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          redemption_id: redemptionId
+        })
+      });
+      
+      const payoutResult = await payoutResponse.json();
+      
+      if (!payoutResponse.ok) {
+        throw new Error(payoutResult.error || 'Erro ao processar pagamento');
+      }
+      
+      console.log('✅ Pagamento processado:', payoutResult);
+      
+      // Sucesso total!
+      alert(`✅ Resgate de ${selectedRedemption.points} pontos (${selectedRedemption.amount}€) processado com sucesso!\n\n` +
+            `💰 Transferência enviada para:\n` +
+            `IBAN: ${iban}\n` +
+            `Nome: ${accountName}\n\n` +
+            `📧 Uma notificação foi enviada para o administrador.\n\n` +
+            `O dinheiro deve chegar em 1-3 dias úteis.`);
+      
+    } catch (payoutError) {
+      console.error('❌ Erro no pagamento automático:', payoutError);
+      
+      alert(`✅ Resgate criado com sucesso!\n\n` +
+            `💰 Pontos debitados: ${selectedRedemption.points}\n` +
+            `💶 Valor: ${selectedRedemption.amount}€\n\n` +
+            `📧 Uma notificação foi enviada para o administrador.\n\n` +
+            `⏳ O pagamento será processado manualmente em breve para:\n` +
+            `IBAN: ${iban}\n` +
+            `Nome: ${accountName}`);
+    }
     
     // Atualizar interface
     hideRedemptionForm();
