@@ -1739,14 +1739,6 @@ function initRedemptionSystem() {
     });
   });
   
-  // Seleção de método de pagamento
-  const paymentMethodRadios = document.querySelectorAll('input[name="paymentMethod"]');
-  paymentMethodRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      showPaymentDetailsFields(e.target.value);
-    });
-  });
-  
   // Botões de confirmação/cancelamento
   document.getElementById('confirmRedemption')?.addEventListener('click', confirmRedemption);
   document.getElementById('cancelRedemption')?.addEventListener('click', hideRedemptionForm);
@@ -1768,8 +1760,8 @@ function showRedemptionForm(points, amount) {
   document.getElementById('redemptionNote').style.display = 'none';
   
   // Reset form
-  document.querySelectorAll('input[name="paymentMethod"]').forEach(r => r.checked = false);
-  document.getElementById('paymentDetailsFields').innerHTML = '';
+  document.getElementById('iban').value = '';
+  document.getElementById('accountName').value = '';
 }
 
 function hideRedemptionForm() {
@@ -1779,128 +1771,31 @@ function hideRedemptionForm() {
   document.getElementById('redemptionNote').style.display = 'block';
 }
 
-function showPaymentDetailsFields(method) {
-  const fieldsDiv = document.getElementById('paymentDetailsFields');
-  
-  if (method === 'MB WAY') {
-    fieldsDiv.innerHTML = `
-      <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px">
-        <label style="display:block;margin-bottom:8px;color:#e6eef8;font-weight:600">
-          📱 Número de Telemóvel MB WAY
-        </label>
-        <input 
-          type="tel" 
-          id="mbwayPhone" 
-          maxlength="9" 
-          pattern="9[1236][0-9]{7}" 
-          placeholder="912345678"
-          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px"
-          required
-        >
-        <small style="color:#9fb4c8;font-size:12px;display:block;margin-top:6px">
-          Deve começar por 91, 92, 93 ou 96
-        </small>
-      </div>
-    `;
-  } else if (method === 'PayPal') {
-    fieldsDiv.innerHTML = `
-      <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px">
-        <label style="display:block;margin-bottom:8px;color:#e6eef8;font-weight:600">
-          📧 Email PayPal
-        </label>
-        <input 
-          type="email" 
-          id="paypalEmail" 
-          placeholder="teu@email.com"
-          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px"
-          required
-        >
-        <small style="color:#9fb4c8;font-size:12px;display:block;margin-top:6px">
-          O email associado à tua conta PayPal
-        </small>
-      </div>
-    `;
-  } else if (method === 'Transferência') {
-    fieldsDiv.innerHTML = `
-      <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px">
-        <label style="display:block;margin-bottom:8px;color:#e6eef8;font-weight:600">
-          🏦 IBAN (Número de Conta)
-        </label>
-        <input 
-          type="text" 
-          id="iban" 
-          maxlength="25" 
-          pattern="PT50[0-9]{21}" 
-          placeholder="PT50000000000000000000000"
-          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:14px;font-family:monospace"
-          required
-        >
-        <small style="color:#9fb4c8;font-size:12px;display:block;margin-top:6px">
-          IBAN português (PT50 + 21 dígitos)
-        </small>
-        <label style="display:block;margin:16px 0 8px 0;color:#e6eef8;font-weight:600">
-          👤 Nome do Titular
-        </label>
-        <input 
-          type="text" 
-          id="accountName" 
-          placeholder="Nome completo"
-          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px"
-          required
-        >
-      </div>
-    `;
-  }
-}
-
 async function confirmRedemption() {
   const btn = document.getElementById('confirmRedemption');
   const originalText = btn.textContent;
   
   try {
-    // Validações
-    const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked');
-    if (!selectedMethod) {
-      alert('⚠️ Seleciona um método de pagamento!');
-      return;
-    }
-    
     if (!selectedRedemption) {
       alert('⚠️ Erro: nenhum resgate selecionado!');
       return;
     }
     
-    // Coletar detalhes de pagamento
-    let paymentDetails = {};
-    const method = selectedMethod.value;
+    // Coletar detalhes de pagamento (apenas Transferência Bancária)
+    const iban = document.getElementById('iban')?.value;
+    const accountName = document.getElementById('accountName')?.value;
     
-    if (method === 'MB WAY') {
-      const phone = document.getElementById('mbwayPhone')?.value;
-      if (!phone || !/^9[1236][0-9]{7}$/.test(phone)) {
-        alert('⚠️ Número de telemóvel inválido!');
-        return;
-      }
-      paymentDetails = { phone };
-    } else if (method === 'PayPal') {
-      const email = document.getElementById('paypalEmail')?.value;
-      if (!email || !email.includes('@')) {
-        alert('⚠️ Email PayPal inválido!');
-        return;
-      }
-      paymentDetails = { email };
-    } else if (method === 'Transferência') {
-      const iban = document.getElementById('iban')?.value;
-      const accountName = document.getElementById('accountName')?.value;
-      if (!iban || !accountName) {
-        alert('⚠️ Preenche todos os campos!');
-        return;
-      }
-      if (!/^PT50[0-9]{21}$/.test(iban)) {
-        alert('⚠️ IBAN inválido! Deve ser PT50 seguido de 21 dígitos.');
-        return;
-      }
-      paymentDetails = { iban, accountName };
+    if (!iban || !accountName) {
+      alert('⚠️ Preenche todos os campos!');
+      return;
     }
+    
+    if (!/^PT50[0-9]{21}$/.test(iban)) {
+      alert('⚠️ IBAN inválido! Deve ser PT50 seguido de 21 dígitos.');
+      return;
+    }
+    
+    const paymentDetails = { iban, accountName };
     
     // Obter user_id
     const userEmail = localStorage.getItem('betai_current_user_email');
@@ -1924,7 +1819,7 @@ async function confirmRedemption() {
     const { data, error } = await supabase.rpc('request_redemption', {
       p_user_id: user.id,
       p_points: selectedRedemption.points,
-      p_payment_method: method,
+      p_payment_method: 'Transferência Bancária',
       p_payment_details: paymentDetails
     });
     
@@ -1939,7 +1834,8 @@ async function confirmRedemption() {
     
     // Sucesso!
     alert(`✅ Resgate de ${selectedRedemption.points} pontos (${selectedRedemption.amount}€) solicitado com sucesso!\n\n` +
-          `Método: ${method}\n` +
+          `Método: Transferência Bancária\n` +
+          `IBAN: ${iban}\n` +
           `Será processado em até 48h úteis.`);
     
     // Atualizar interface
