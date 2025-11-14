@@ -1,0 +1,16 @@
+{
+  "name": "betai-webhooks",
+  "version": "1.0.0",
+  "description": "Stripe Webhooks para BetAI",
+  "main": "webhook-stripe.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["stripe", "webhook", "supabase"],
+  "author": "José Castro",
+  "license": "ISC",
+  "dependencies": {
+    "stripe": "^14.0.0",
+    "@supabase/supabase-js": "^2.38.0"
+  }
+}
