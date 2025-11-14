@@ -575,7 +575,7 @@
           </div>
         </div>
 
-        <div style="background:rgba(234,179,8,0.1);padding:16px;border-radius:8px">
+        <div style="background:rgba(234,179,8,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
           <h3 style="color:#eab308;margin:0 0 12px 0">🏆 Recompensas</h3>
           <div style="display:grid;gap:8px;font-size:14px">
             <div style="padding:8px;background:rgba(0,0,0,0.3);border-radius:4px;display:flex;justify-content:space-between">
@@ -590,6 +590,95 @@
               <span>100 pontos</span>
               <strong style="color:#eab308">35€</strong>
             </div>
+          </div>
+        </div>
+
+        <!-- SISTEMA DE RESGATE DE PONTOS -->
+        <div style="background:linear-gradient(135deg,rgba(234,179,8,0.15),rgba(16,185,129,0.15));padding:20px;border-radius:12px;border:2px solid #eab308;margin-bottom:20px">
+          <h3 style="color:#eab308;margin:0 0 16px 0">💰 Resgatar Pontos</h3>
+          
+          <div id="redemptionOptions" style="display:grid;gap:12px;margin-bottom:20px">
+            <button class="redemption-btn" data-points="20" data-amount="5" style="background:rgba(234,179,8,0.2);border:2px solid #eab308;border-radius:10px;padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s">
+              <div style="text-align:left">
+                <div style="font-size:18px;font-weight:bold;color:#eab308">20 pontos → 5€</div>
+                <div style="font-size:12px;color:#9fb4c8;margin-top:4px">Conversão: 1 ponto = 0.25€</div>
+              </div>
+              <div style="font-size:28px">💵</div>
+            </button>
+            
+            <button class="redemption-btn" data-points="50" data-amount="15" style="background:rgba(234,179,8,0.2);border:2px solid #eab308;border-radius:10px;padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s">
+              <div style="text-align:left">
+                <div style="font-size:18px;font-weight:bold;color:#eab308">50 pontos → 15€</div>
+                <div style="font-size:12px;color:#10b981;margin-top:4px">+20% de bónus! (1 ponto = 0.30€)</div>
+              </div>
+              <div style="font-size:28px">💰</div>
+            </button>
+            
+            <button class="redemption-btn recommended" data-points="100" data-amount="35" style="background:rgba(16,185,129,0.2);border:2px solid #10b981;border-radius:10px;padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s;position:relative">
+              <div class="popular-badge" style="position:absolute;top:-10px;right:10px;background:#10b981;color:#012;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700">RECOMENDADO</div>
+              <div style="text-align:left">
+                <div style="font-size:18px;font-weight:bold;color:#10b981">100 pontos → 35€</div>
+                <div style="font-size:12px;color:#10b981;margin-top:4px">+40% de bónus! (1 ponto = 0.35€)</div>
+              </div>
+              <div style="font-size:28px">🎁</div>
+            </button>
+          </div>
+
+          <!-- Formulário de Resgate (inicialmente oculto) -->
+          <div id="redemptionForm" style="display:none">
+            <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px;margin-bottom:16px">
+              <h4 style="color:#06b6d4;margin:0 0 12px 0">Seleciona o método de pagamento</h4>
+              
+              <div style="display:grid;gap:10px">
+                <label style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
+                  <input type="radio" name="paymentMethod" value="MB WAY" style="width:18px;height:18px">
+                  <div style="flex:1">
+                    <div style="font-weight:600;color:#06b6d4">📱 MB WAY</div>
+                    <div style="font-size:12px;color:#9fb4c8;margin-top:2px">Recebe diretamente no teu telemóvel</div>
+                  </div>
+                </label>
+                
+                <label style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
+                  <input type="radio" name="paymentMethod" value="PayPal" style="width:18px;height:18px">
+                  <div style="flex:1">
+                    <div style="font-weight:600;color:#06b6d4">💳 PayPal</div>
+                    <div style="font-size:12px;color:#9fb4c8;margin-top:2px">Transferência para a tua conta PayPal</div>
+                  </div>
+                </label>
+                
+                <label style="background:rgba(255,255,255,0.05);padding:12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
+                  <input type="radio" name="paymentMethod" value="Transferência" style="width:18px;height:18px">
+                  <div style="flex:1">
+                    <div style="font-weight:600;color:#06b6d4">🏦 Transferência Bancária</div>
+                    <div style="font-size:12px;color:#9fb4c8;margin-top:2px">Transferência para o teu IBAN</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Campos dinâmicos baseados no método -->
+            <div id="paymentDetailsFields" style="margin-bottom:16px"></div>
+
+            <div style="display:flex;gap:10px">
+              <button id="confirmRedemption" style="flex:1;padding:14px;background:#10b981;color:#012;border:none;border-radius:8px;font-weight:700;font-size:16px;cursor:pointer">
+                ✅ Confirmar Resgate
+              </button>
+              <button id="cancelRedemption" style="padding:14px 20px;background:#374151;color:#fff;border:none;border-radius:8px;cursor:pointer">
+                ✕ Cancelar
+              </button>
+            </div>
+          </div>
+
+          <p id="redemptionNote" style="font-size:12px;color:#9fb4c8;margin:12px 0 0 0;text-align:center">
+            ⏱️ Os resgates são processados em até 48 horas úteis
+          </p>
+        </div>
+
+        <!-- HISTÓRICO DE RESGATES -->
+        <div id="redemptionHistory" style="background:rgba(255,255,255,0.02);padding:16px;border-radius:8px;margin-bottom:20px">
+          <h4 style="color:#06b6d4;margin:0 0 12px 0">📜 Histórico de Resgates</h4>
+          <div id="redemptionHistoryContent" style="display:grid;gap:8px">
+            <p style="text-align:center;color:#9fb4c8;font-size:13px">Nenhum resgate ainda</p>
           </div>
         </div>
 

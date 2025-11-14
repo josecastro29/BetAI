@@ -7,3 +7,10 @@
 .tab-btn.active{background:#06b6d4;color:#012}
 .tab-content{display:none}
 .tab-content.active{display:block}
+
+/* Sistema de Resgate de Pontos */
+.redemption-btn{transition:transform 0.2s,box-shadow 0.2s}
+.redemption-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(234,179,8,0.3)}
+.redemption-btn.recommended:hover{box-shadow:0 4px 12px rgba(16,185,129,0.3)}
+input[type="tel"],input[type="email"]{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px}
+input[type="tel"]:focus,input[type="email"]:focus{outline:none;border-color:#06b6d4;box-shadow:0 0 0 3px rgba(6,182,212,0.1)}

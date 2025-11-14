@@ -1712,4 +1712,328 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Renderizar conta
   renderAccount();
+  
+  // Inicializar sistema de resgate
+  initRedemptionSystem();
 });
+
+/* ----------------- Sistema de Resgate de Pontos ----------------- */
+let selectedRedemption = null;
+
+function initRedemptionSystem() {
+  // Botões de seleção de resgate
+  const redemptionBtns = document.querySelectorAll('.redemption-btn');
+  redemptionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const points = parseInt(btn.getAttribute('data-points'));
+      const amount = parseFloat(btn.getAttribute('data-amount'));
+      showRedemptionForm(points, amount);
+    });
+  });
+  
+  // Seleção de método de pagamento
+  const paymentMethodRadios = document.querySelectorAll('input[name="paymentMethod"]');
+  paymentMethodRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      showPaymentDetailsFields(e.target.value);
+    });
+  });
+  
+  // Botões de confirmação/cancelamento
+  document.getElementById('confirmRedemption')?.addEventListener('click', confirmRedemption);
+  document.getElementById('cancelRedemption')?.addEventListener('click', hideRedemptionForm);
+}
+
+function showRedemptionForm(points, amount) {
+  const userEmail = localStorage.getItem('betai_current_user_email');
+  if (!userEmail) {
+    alert('⚠️ Precisas estar logado para resgatar pontos!');
+    document.getElementById('openLogin').click();
+    return;
+  }
+  
+  selectedRedemption = { points, amount };
+  
+  // Esconder opções e mostrar formulário
+  document.getElementById('redemptionOptions').style.display = 'none';
+  document.getElementById('redemptionForm').style.display = 'block';
+  document.getElementById('redemptionNote').style.display = 'none';
+  
+  // Reset form
+  document.querySelectorAll('input[name="paymentMethod"]').forEach(r => r.checked = false);
+  document.getElementById('paymentDetailsFields').innerHTML = '';
+}
+
+function hideRedemptionForm() {
+  selectedRedemption = null;
+  document.getElementById('redemptionOptions').style.display = 'grid';
+  document.getElementById('redemptionForm').style.display = 'none';
+  document.getElementById('redemptionNote').style.display = 'block';
+}
+
+function showPaymentDetailsFields(method) {
+  const fieldsDiv = document.getElementById('paymentDetailsFields');
+  
+  if (method === 'MB WAY') {
+    fieldsDiv.innerHTML = `
+      <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px">
+        <label style="display:block;margin-bottom:8px;color:#e6eef8;font-weight:600">
+          📱 Número de Telemóvel MB WAY
+        </label>
+        <input 
+          type="tel" 
+          id="mbwayPhone" 
+          maxlength="9" 
+          pattern="9[1236][0-9]{7}" 
+          placeholder="912345678"
+          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px"
+          required
+        >
+        <small style="color:#9fb4c8;font-size:12px;display:block;margin-top:6px">
+          Deve começar por 91, 92, 93 ou 96
+        </small>
+      </div>
+    `;
+  } else if (method === 'PayPal') {
+    fieldsDiv.innerHTML = `
+      <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px">
+        <label style="display:block;margin-bottom:8px;color:#e6eef8;font-weight:600">
+          📧 Email PayPal
+        </label>
+        <input 
+          type="email" 
+          id="paypalEmail" 
+          placeholder="teu@email.com"
+          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px"
+          required
+        >
+        <small style="color:#9fb4c8;font-size:12px;display:block;margin-top:6px">
+          O email associado à tua conta PayPal
+        </small>
+      </div>
+    `;
+  } else if (method === 'Transferência') {
+    fieldsDiv.innerHTML = `
+      <div style="background:rgba(0,0,0,0.4);padding:16px;border-radius:8px">
+        <label style="display:block;margin-bottom:8px;color:#e6eef8;font-weight:600">
+          🏦 IBAN (Número de Conta)
+        </label>
+        <input 
+          type="text" 
+          id="iban" 
+          maxlength="25" 
+          pattern="PT50[0-9]{21}" 
+          placeholder="PT50000000000000000000000"
+          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:14px;font-family:monospace"
+          required
+        >
+        <small style="color:#9fb4c8;font-size:12px;display:block;margin-top:6px">
+          IBAN português (PT50 + 21 dígitos)
+        </small>
+        <label style="display:block;margin:16px 0 8px 0;color:#e6eef8;font-weight:600">
+          👤 Nome do Titular
+        </label>
+        <input 
+          type="text" 
+          id="accountName" 
+          placeholder="Nome completo"
+          style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid #374151;border-radius:6px;color:#e6eef8;font-size:16px"
+          required
+        >
+      </div>
+    `;
+  }
+}
+
+async function confirmRedemption() {
+  const btn = document.getElementById('confirmRedemption');
+  const originalText = btn.textContent;
+  
+  try {
+    // Validações
+    const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    if (!selectedMethod) {
+      alert('⚠️ Seleciona um método de pagamento!');
+      return;
+    }
+    
+    if (!selectedRedemption) {
+      alert('⚠️ Erro: nenhum resgate selecionado!');
+      return;
+    }
+    
+    // Coletar detalhes de pagamento
+    let paymentDetails = {};
+    const method = selectedMethod.value;
+    
+    if (method === 'MB WAY') {
+      const phone = document.getElementById('mbwayPhone')?.value;
+      if (!phone || !/^9[1236][0-9]{7}$/.test(phone)) {
+        alert('⚠️ Número de telemóvel inválido!');
+        return;
+      }
+      paymentDetails = { phone };
+    } else if (method === 'PayPal') {
+      const email = document.getElementById('paypalEmail')?.value;
+      if (!email || !email.includes('@')) {
+        alert('⚠️ Email PayPal inválido!');
+        return;
+      }
+      paymentDetails = { email };
+    } else if (method === 'Transferência') {
+      const iban = document.getElementById('iban')?.value;
+      const accountName = document.getElementById('accountName')?.value;
+      if (!iban || !accountName) {
+        alert('⚠️ Preenche todos os campos!');
+        return;
+      }
+      if (!/^PT50[0-9]{21}$/.test(iban)) {
+        alert('⚠️ IBAN inválido! Deve ser PT50 seguido de 21 dígitos.');
+        return;
+      }
+      paymentDetails = { iban, accountName };
+    }
+    
+    // Obter user_id
+    const userEmail = localStorage.getItem('betai_current_user_email');
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', userEmail)
+      .single();
+    
+    if (!user) {
+      alert('⚠️ Erro ao identificar utilizador!');
+      return;
+    }
+    
+    // Desabilitar botão
+    btn.disabled = true;
+    btn.textContent = '⏳ Processando...';
+    btn.style.opacity = '0.6';
+    
+    // Chamar função SQL para criar resgate
+    const { data, error } = await supabase.rpc('request_redemption', {
+      p_user_id: user.id,
+      p_points: selectedRedemption.points,
+      p_payment_method: method,
+      p_payment_details: paymentDetails
+    });
+    
+    if (error) {
+      console.error('Erro ao criar resgate:', error);
+      alert('❌ Erro: ' + error.message);
+      btn.disabled = false;
+      btn.textContent = originalText;
+      btn.style.opacity = '1';
+      return;
+    }
+    
+    // Sucesso!
+    alert(`✅ Resgate de ${selectedRedemption.points} pontos (${selectedRedemption.amount}€) solicitado com sucesso!\n\n` +
+          `Método: ${method}\n` +
+          `Será processado em até 48h úteis.`);
+    
+    // Atualizar interface
+    hideRedemptionForm();
+    
+    // Recarregar pontos e histórico
+    const userEmailReload = localStorage.getItem('betai_current_user_email');
+    if (userEmailReload) {
+      await loadReferralData(userEmailReload);
+      await loadRedemptionHistory(user.id);
+    }
+    
+    // Restaurar botão
+    btn.disabled = false;
+    btn.textContent = originalText;
+    btn.style.opacity = '1';
+    
+  } catch (err) {
+    console.error('Erro inesperado:', err);
+    alert('❌ Erro inesperado ao processar resgate!');
+    btn.disabled = false;
+    btn.textContent = originalText;
+    btn.style.opacity = '1';
+  }
+}
+
+async function loadRedemptionHistory(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('redemptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('requested_at', { ascending: false });
+    
+    if (error) {
+      console.error('Erro ao carregar histórico:', error);
+      return;
+    }
+    
+    const historyDiv = document.getElementById('redemptionHistoryContent');
+    
+    if (!data || data.length === 0) {
+      historyDiv.innerHTML = '<p style="text-align:center;color:#9fb4c8;font-size:13px">Nenhum resgate ainda</p>';
+      return;
+    }
+    
+    historyDiv.innerHTML = data.map(r => {
+      const statusColors = {
+        pending: { bg: 'rgba(234,179,8,0.2)', border: '#eab308', text: '#eab308', icon: '⏳', label: 'Pendente' },
+        approved: { bg: 'rgba(6,182,212,0.2)', border: '#06b6d4', text: '#06b6d4', icon: '✅', label: 'Aprovado' },
+        paid: { bg: 'rgba(16,185,129,0.2)', border: '#10b981', text: '#10b981', icon: '💰', label: 'Pago' },
+        rejected: { bg: 'rgba(239,68,68,0.2)', border: '#ef4444', text: '#ef4444', icon: '❌', label: 'Rejeitado' }
+      };
+      
+      const status = statusColors[r.status] || statusColors.pending;
+      const date = new Date(r.requested_at).toLocaleDateString('pt-PT');
+      
+      return `
+        <div style="background:${status.bg};border:1px solid ${status.border};border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <span style="font-weight:bold;color:#e6eef8">${r.points_redeemed} pontos → ${r.amount_euro}€</span>
+              <span style="font-size:12px;color:#9fb4c8;margin-left:8px">${r.payment_method}</span>
+            </div>
+            <span style="color:${status.text};font-weight:600;font-size:14px">${status.icon} ${status.label}</span>
+          </div>
+          <div style="font-size:11px;color:#9fb4c8">
+            Pedido em: ${date}
+            ${r.processed_at ? ` • Processado em: ${new Date(r.processed_at).toLocaleDateString('pt-PT')}` : ''}
+          </div>
+          ${r.admin_notes ? `
+            <div style="margin-top:8px;padding:8px;background:rgba(0,0,0,0.3);border-radius:4px;font-size:12px;color:#9fb4c8">
+              📝 Nota: ${r.admin_notes}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+    
+  } catch (err) {
+    console.error('Erro ao carregar histórico:', err);
+  }
+}
+
+// Modificar loadReferralData para também carregar histórico de resgates
+const originalLoadReferralData = loadReferralData;
+async function loadReferralData(email) {
+  await originalLoadReferralData(email);
+  
+  // Carregar histórico de resgates também
+  try {
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+    
+    if (user) {
+      await loadRedemptionHistory(user.id);
+    }
+  } catch (err) {
+    console.error('Erro ao carregar histórico de resgates:', err);
+  }
+}
+
