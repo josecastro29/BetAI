@@ -1369,6 +1369,9 @@ async function loadReferralData(userEmail) {
       pointsToNextMain.textContent = nextMilestone - userPoints;
     }
     
+    // Atualizar botões de resgate baseado nos pontos disponíveis
+    updateRedemptionButtons(userPoints);
+    
   } catch (err) {
     console.log('Sem pontos ainda');
   }
@@ -1728,11 +1731,55 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ----------------- Sistema de Resgate de Pontos ----------------- */
 let selectedRedemption = null;
 
+function updateRedemptionButtons(userPoints) {
+  const redemptionBtns = document.querySelectorAll('.redemption-btn');
+  
+  redemptionBtns.forEach(btn => {
+    const requiredPoints = parseInt(btn.getAttribute('data-points'));
+    
+    if (userPoints < requiredPoints) {
+      // Desabilitar botão
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+      btn.style.filter = 'grayscale(1)';
+      
+      // Adicionar mensagem de pontos insuficientes
+      const pointsDiv = btn.querySelector('div:first-child');
+      let insufficientMsg = btn.querySelector('.insufficient-points-msg');
+      
+      if (!insufficientMsg) {
+        insufficientMsg = document.createElement('div');
+        insufficientMsg.className = 'insufficient-points-msg';
+        insufficientMsg.style.cssText = 'font-size:11px;color:#ef4444;margin-top:4px;font-weight:600';
+        insufficientMsg.textContent = `❌ Precisas de ${requiredPoints - userPoints} pontos`;
+        pointsDiv.appendChild(insufficientMsg);
+      }
+    } else {
+      // Habilitar botão
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.style.filter = 'grayscale(0)';
+      
+      // Remover mensagem de pontos insuficientes
+      const insufficientMsg = btn.querySelector('.insufficient-points-msg');
+      if (insufficientMsg) {
+        insufficientMsg.remove();
+      }
+    }
+  });
+}
+
 function initRedemptionSystem() {
   // Botões de seleção de resgate
   const redemptionBtns = document.querySelectorAll('.redemption-btn');
   redemptionBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.disabled) {
+        alert('⚠️ Não tens pontos suficientes para este levantamento!');
+        return;
+      }
       const points = parseInt(btn.getAttribute('data-points'));
       const amount = parseFloat(btn.getAttribute('data-amount'));
       showRedemptionForm(points, amount);
