@@ -89,7 +89,6 @@ async function handleCheckoutCompleted(session) {
   // Determinar tipo de plano baseado no valor
   const planType = amountTotal === 4500 ? 'yearly' : 'monthly'; // €45 ou €10
   const months = planType === 'yearly' ? 12 : 1;
-  const pointsToAward = planType === 'yearly' ? 12 : 8;
 
   // Buscar utilizador
   const { data: user, error: userError } = await supabase
@@ -126,37 +125,7 @@ async function handleCheckoutCompleted(session) {
 
   console.log(`✅ Subscription activated for ${customerEmail} (${planType})`);
 
-  // Conceder pontos pela própria subscrição
-  await awardPoints(user.id, pointsToAward, `Assinatura ${planType}`, null);
-
-  // Se foi referido por alguém, conceder pontos ao referrer
-  if (user.referred_by) {
-    const referralPoints = planType === 'yearly' ? 10 : 6;
-    
-    // Atualizar status da referência para completed
-    const { data: referral } = await supabase
-      .from('referrals')
-      .update({ 
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      })
-      .eq('referred_id', user.id)
-      .eq('referrer_id', user.referred_by)
-      .select()
-      .single();
-
-    if (referral) {
-      // Conceder pontos ao referrer
-      await awardPoints(
-        user.referred_by, 
-        referralPoints, 
-        `Referência subscreveu (${planType})`,
-        referral.id
-      );
-      
-      console.log(`✅ Awarded ${referralPoints} points to referrer for ${planType} subscription`);
-    }
-  }
+  // Nota: Pontos removidos - apenas 1 ponto por registo, não por subscrição
 }
 
 async function handleSubscriptionCreated(subscription) {
