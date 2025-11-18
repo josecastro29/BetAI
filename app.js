@@ -1204,6 +1204,9 @@ async function renderAccount(){
     // Carregar pontos para a barra compacta
     loadPointsForMainTab(u.email);
     
+    // Atualizar vistos das missões
+    updateMissionChecks();
+    
     // Nota: A secção de referral agora está na aba "Missões" e só é carregada quando essa aba é aberta
     // A função loadReferralData é chamada apenas quando o usuário clica na aba "Missões"
   } else {
@@ -1216,6 +1219,9 @@ async function renderAccount(){
     if (pointsBarMain) {
       pointsBarMain.style.display = 'none';
     }
+    
+    // Atualizar vistos das missões
+    updateMissionChecks();
   }
 }
 
@@ -1765,6 +1771,89 @@ function switchTab(targetTab) {
   // Se for a aba de subscrições, carregar estado
   if (targetTab === 'subscription') {
     loadSubscriptionStatus();
+  }
+  
+  // Se for a aba de missões, atualizar vistos
+  if (targetTab === 'missions') {
+    updateMissionChecks();
+  }
+}
+
+/* ----------------- Sistema de Missões ----------------- */
+function handleMissionClick(missionType) {
+  if (missionType === 'register') {
+    // Verificar se já está registado
+    const userEmail = localStorage.getItem('betai_current_user_email');
+    if (userEmail) {
+      // Já está registado, não fazer nada
+      return;
+    }
+    
+    // Abrir modal de registo
+    const authModal = document.getElementById('authModal');
+    const signupBox = document.getElementById('signupBox');
+    const loginBox = document.getElementById('loginBox');
+    const tabSignup = document.getElementById('tabSignup');
+    const tabLogin = document.getElementById('tabLogin');
+    
+    authModal.classList.remove('hidden');
+    signupBox.classList.remove('hidden');
+    loginBox.classList.add('hidden');
+    tabSignup?.classList.add('active');
+    tabLogin?.classList.remove('active');
+  }
+  
+  if (missionType === 'subscription') {
+    // Verificar se já tem subscrição
+    const userEmail = localStorage.getItem('betai_current_user_email');
+    if (!userEmail) {
+      // Não está logado, abrir modal de registo
+      handleMissionClick('register');
+      return;
+    }
+    
+    const user = getUser(userEmail);
+    if (user && isSubscribed(user)) {
+      // Já tem subscrição, não fazer nada
+      return;
+    }
+    
+    // Mostrar modal de pagamento
+    const paymentModal = document.getElementById('paymentModal');
+    paymentModal.classList.remove('hidden');
+  }
+}
+
+function updateMissionChecks() {
+  const userEmail = localStorage.getItem('betai_current_user_email');
+  
+  // Missão de registo
+  const checkRegister = document.getElementById('check-register');
+  if (checkRegister) {
+    if (userEmail) {
+      checkRegister.style.display = 'inline';
+    } else {
+      checkRegister.style.display = 'none';
+    }
+  }
+  
+  // Missões de subscrição
+  const checkSubscription = document.getElementById('check-subscription');
+  const checkSubscriptionYearly = document.getElementById('check-subscription-yearly');
+  
+  if (userEmail) {
+    const user = getUser(userEmail);
+    const hasSub = user && isSubscribed(user);
+    
+    if (checkSubscription) {
+      checkSubscription.style.display = hasSub ? 'inline' : 'none';
+    }
+    if (checkSubscriptionYearly) {
+      checkSubscriptionYearly.style.display = hasSub ? 'inline' : 'none';
+    }
+  } else {
+    if (checkSubscription) checkSubscription.style.display = 'none';
+    if (checkSubscriptionYearly) checkSubscriptionYearly.style.display = 'none';
   }
 }
 

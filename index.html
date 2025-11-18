@@ -431,16 +431,25 @@
           <!-- Ações do Próprio Utilizador -->
           <h4 style="color:#06b6d4;margin:16px 0 8px 0;font-size:14px">📝 Tuas Ações</h4>
           <div style="display:grid;gap:8px;margin-bottom:16px">
-            <div style="background:rgba(6,182,212,0.2);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #06b6d4">
-              <span style="font-size:14px">🆕 Criar conta / Registo</span>
+            <div id="mission-register" class="mission-item" style="background:rgba(6,182,212,0.2);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #06b6d4;cursor:pointer;transition:all 0.2s" onclick="handleMissionClick('register')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span id="check-register" class="mission-check" style="font-size:18px;display:none">✅</span>
+                <span style="font-size:14px">🆕 Criar conta / Registo</span>
+              </div>
               <strong style="color:#06b6d4">+1 pt</strong>
             </div>
-            <div style="background:rgba(168,85,247,0.2);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #a855f7">
-              <span style="font-size:14px">💎 Subscrição Mensal</span>
+            <div id="mission-subscription-monthly" class="mission-item" style="background:rgba(168,85,247,0.2);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #a855f7;cursor:pointer;transition:all 0.2s" onclick="handleMissionClick('subscription')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span id="check-subscription" class="mission-check" style="font-size:18px;display:none">✅</span>
+                <span style="font-size:14px">💎 Subscrição Mensal</span>
+              </div>
               <strong style="color:#a855f7">+5 pt</strong>
             </div>
-            <div style="background:rgba(234,179,8,0.2);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #eab308">
-              <span style="font-size:14px">👑 Subscrição Anual</span>
+            <div id="mission-subscription-yearly" class="mission-item" style="background:rgba(234,179,8,0.2);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #eab308;cursor:pointer;transition:all 0.2s" onclick="handleMissionClick('subscription')">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span id="check-subscription-yearly" class="mission-check" style="font-size:18px;display:none">✅</span>
+                <span style="font-size:14px">👑 Subscrição Anual</span>
+              </div>
               <strong style="color:#eab308">+10 pt</strong>
             </div>
           </div>
