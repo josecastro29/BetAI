@@ -403,16 +403,7 @@
       <section id="referralSection" class="card">
         <h2>🎁 Programa de Referência</h2>
         
-        <div style="background:rgba(6,182,212,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
-          <h3 style="color:#06b6d4;margin:0 0 8px 0">🔗 Partilha Este Link Para Ganhares Pontos</h3>
-          <p style="font-size:13px;color:#9fb4c8;margin:0 0 12px 0">
-            Envia este link aos teus amigos. Quando se registarem usando o teu link, ganhas 1 ponto! 🎁
-          </p>
-          <input id="referralLinkInput" type="text" readonly style="width:100%;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid #06b6d4;padding:12px;margin-bottom:12px;border-radius:8px;color:#06b6d4;font-weight:500">
-          <button id="copyReferralLink" style="width:100%;padding:12px;background:#10b981;font-size:16px;font-weight:600">🔗 Copiar Link de Referência</button>
-        </div>
-
-        <div style="background:rgba(16,185,129,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+        <div style="background:rgba(10,185,129,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
           <h3 style="color:#10b981;margin:0 0 12px 0">💎 Teus Pontos</h3>
           <div style="font-size:32px;font-weight:bold;color:#10b981;text-align:center;margin:12px 0">
             <span id="userPoints">0</span> <span style="font-size:18px">pontos</span>
@@ -458,10 +449,22 @@
           <h4 style="color:#10b981;margin:16px 0 8px 0;font-size:14px">👥 Quando Alguém Usa o Teu Código</h4>
           <div style="display:grid;gap:8px">
             <div style="background:rgba(16,185,129,0.15);padding:10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #10b981">
-              <span style="font-size:14px">🆕 Novo registo</span>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:14px">🆕 Novo registo</span>
+                <small style="font-size:11px;color:#9fb4c8">(partilha o teu link de referência)</small>
+              </div>
               <strong style="color:#10b981">+1 pt</strong>
             </div>
           </div>
+        </div>
+
+        <div style="background:rgba(6,182,212,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
+          <h3 style="color:#06b6d4;margin:0 0 8px 0">🔗 Partilha Este Link Para Ganhares Pontos</h3>
+          <p style="font-size:13px;color:#9fb4c8;margin:0 0 12px 0">
+            Envia este link aos teus amigos. Quando se registarem usando o teu link, ganhas 1 ponto! 🎁
+          </p>
+          <input id="referralLinkInput" type="text" readonly style="width:100%;font-size:14px;background:rgba(0,0,0,0.3);border:1px solid #06b6d4;padding:12px;margin-bottom:12px;border-radius:8px;color:#06b6d4;font-weight:500">
+          <button id="copyReferralLink" style="width:100%;padding:12px;background:#10b981;font-size:16px;font-weight:600">🔗 Copiar Link de Referência</button>
         </div>
 
         <div style="background:rgba(234,179,8,0.1);padding:16px;border-radius:8px;margin-bottom:20px">
