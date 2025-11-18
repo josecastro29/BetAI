@@ -274,151 +274,6 @@
           </div>
         </form>
       </section>
-
-      <!-- Payment / Auth modals -->
-      <div id="authModal" class="modal hidden">
-        <div class="modal-content">
-          <button class="modal-close" id="closeAuth">✕</button>
-          <h3>Entrar / Registar</h3>
-          <div class="tabs">
-            <button id="tabLogin">Entrar</button>
-            <button id="tabSignup">Registar</button>
-          </div>
-          <div id="loginBox">
-            <label>Email<input id="loginEmail" type="text"></label>
-            <label>Password<input id="loginPass" type="password"></label>
-            <div class="actions"><button id="doLogin">Entrar</button></div>
-          </div>
-          <div id="signupBox" class="hidden">
-            <label>Nome<input id="signupName" type="text" required></label>
-            <label>Email<input id="signupEmail" type="email" required></label>
-            <label>NIF (Número de Identificação Fiscal)
-              <input id="signupNif" type="text" maxlength="9" pattern="[0-9]{9}" placeholder="123456789" required>
-              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">9 dígitos sem espaços</small>
-            </label>
-            <label>Telemóvel
-              <input id="signupPhone" type="tel" maxlength="9" pattern="9[1236][0-9]{7}" placeholder="912345678" required>
-              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">9 dígitos (ex: 91, 92, 93 ou 96)</small>
-            </label>
-            <label>Password<input id="signupPass" type="password" required></label>
-            <div class="actions"><button id="doSignup">Enviar Código de Verificação</button></div>
-          </div>
-          
-          <!-- Caixa de Verificação de Código SMS -->
-          <div id="verificationBox" class="hidden">
-            <h4 style="color:#06b6d4;margin-top:0">📱 Verificação de Telemóvel</h4>
-            <p style="font-size:13px;color:#9fb4c8;margin-bottom:16px">
-              Enviámos um código de 6 dígitos para o teu telemóvel<br>
-              <strong id="verificationPhone"></strong>
-            </p>
-            <label>Código de Verificação
-              <input id="verificationCode" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="123456" autocomplete="off" required>
-              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">Introduz o código que recebeste</small>
-            </label>
-            <div class="actions">
-              <button id="doVerify">Verificar e Concluir Registo</button>
-              <button id="resendCode" style="background:#374151;margin-left:8px">Reenviar Código</button>
-            </div>
-            <button id="backToSignup" style="background:transparent;border:1px solid #374151;width:100%;margin-top:8px;font-size:12px">← Voltar</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="paymentModal" class="modal hidden">
-        <div class="modal-content">
-          <button class="modal-close" id="closePayment">✕</button>
-          <h3>Desbloqueia Acesso Completo</h3>
-          <p>Escolhe um plano para activar todas as funcionalidades premium:</p>
-          
-          <div class="benefits">
-            <h4 style="color:#06b6d4;margin-bottom:12px">✨ O que vais receber:</h4>
-            <ul style="list-style:none;padding:0;margin:0 0 20px 0">
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Análise personalizada baseada em 20+ critérios
-              </li>
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Recomendações de IA adaptadas ao teu perfil
-              </li>
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Plano semanal detalhado com progressão
-              </li>
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Regras de gestão de risco personalizadas
-              </li>
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Gerador de stakes com Kelly Criterion
-              </li>
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Alertas psicológicos e de disciplina
-              </li>
-              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <strong style="color:#10b981">✓</strong> Benchmarks realistas vs apostadores profissionais
-              </li>
-              <li style="padding:8px 0">
-                <strong style="color:#10b981">✓</strong> Questionários ilimitados para diferentes cenários
-              </li>
-            </ul>
-          </div>
-
-          <div class="plans">
-            <div class="plan">
-              <h4>Mensal</h4>
-              <p>€10 / mês</p>
-              <button class="payBtn" data-plan="monthly">Pagar Mensal</button>
-            </div>
-            <div class="plan plan-popular">
-              <div class="popular-badge">MAIS POPULAR</div>
-              <h4>Anual</h4>
-              <p class="price-main">€45 / ano</p>
-              <p class="price-compare">em vez de €120 (12 × €10)</p>
-              <p class="savings">Poupa €75!</p>
-              <button class="payBtn" data-plan="yearly">Pagar Anual</button>
-            </div>
-          </div>
-          
-          <div style="text-align:center;margin-top:16px;padding:12px;background:rgba(6,182,212,0.1);border-radius:8px">
-            <p style="margin:0;font-size:13px;color:#9fb4c8">
-              🔒 Pagamento seguro processado por Stripe<br>
-              💯 Cancela a qualquer momento
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <section id="advice" class="card hidden">
-        <h2>Recomendação (IA)</h2>
-        <div id="adviceContent"></div>
-      </section>
-
-      <section id="betBuilder" class="card hidden">
-        <h2>Gerador de apostas</h2>
-        <p>Introduz uma aposta concreta (nome, odds decimais e a tua estimativa de probabilidade). O sistema calcula stake sugerida (Kelly e outro método).</p>
-
-        <form id="betForm">
-          <label>Evento / Aposta
-            <input type="text" id="event" placeholder="Ex: Team A vs Team B — vitória Team A" required>
-          </label>
-
-          <label>Odds (decimal)
-            <input type="number" id="odds" step="0.01" min="1.01" value="2.00" required>
-          </label>
-
-          <label>Tua probabilidade estimada (%)
-            <input type="number" id="prob" step="0.1" min="0.1" max="99.9" value="55" required>
-          </label>
-
-          <div class="actions">
-            <button type="submit">Calcular stake</button>
-          </div>
-        </form>
-
-        <div id="betResult"></div>
-      </section>
-
-      <section class="card">
-        <h3>Aviso e ética</h3>
-        <p>Esta ferramenta é meramente informativa. Aconselha-se responsabilidade financeira. Não sou um consultor financeiro. As apostas envolvem risco de perda total do capital.</p>
-      </section>
       </div>
       <!-- FIM ABA PRINCIPAL -->
 
@@ -670,6 +525,116 @@
       </section>
       </div>
       <!-- FIM ABA MISSÕES -->
+
+      <!-- Payment / Auth modals (GLOBAL - accessible from all tabs) -->
+      <div id="authModal" class="modal hidden">
+        <div class="modal-content">
+          <button class="modal-close" id="closeAuth">✕</button>
+          <h3>Entrar / Registar</h3>
+          <div class="tabs">
+            <button id="tabLogin">Entrar</button>
+            <button id="tabSignup">Registar</button>
+          </div>
+          <div id="loginBox">
+            <label>Email<input id="loginEmail" type="text"></label>
+            <label>Password<input id="loginPass" type="password"></label>
+            <div class="actions"><button id="doLogin">Entrar</button></div>
+          </div>
+          <div id="signupBox" class="hidden">
+            <label>Nome<input id="signupName" type="text" required></label>
+            <label>Email<input id="signupEmail" type="email" required></label>
+            <label>NIF (Número de Identificação Fiscal)
+              <input id="signupNif" type="text" maxlength="9" pattern="[0-9]{9}" placeholder="123456789" required>
+              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">9 dígitos sem espaços</small>
+            </label>
+            <label>Telemóvel
+              <input id="signupPhone" type="tel" maxlength="9" pattern="9[1236][0-9]{7}" placeholder="912345678" required>
+              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">9 dígitos (ex: 91, 92, 93 ou 96)</small>
+            </label>
+            <label>Password<input id="signupPass" type="password" required></label>
+            <div class="actions"><button id="doSignup">Enviar Código de Verificação</button></div>
+          </div>
+          
+          <!-- Caixa de Verificação de Código SMS -->
+          <div id="verificationBox" class="hidden">
+            <h4 style="color:#06b6d4;margin-top:0">📱 Verificação de Telemóvel</h4>
+            <p style="font-size:13px;color:#9fb4c8;margin-bottom:16px">
+              Enviámos um código de 6 dígitos para o teu telemóvel<br>
+              <strong id="verificationPhone"></strong>
+            </p>
+            <label>Código de Verificação
+              <input id="verificationCode" type="text" maxlength="6" pattern="[0-9]{6}" placeholder="123456" autocomplete="off" required>
+              <small style="color:#9fb4c8;font-size:11px;display:block;margin-top:4px">Introduz o código que recebeste</small>
+            </label>
+            <div class="actions">
+              <button id="doVerify">Verificar e Concluir Registo</button>
+              <button id="resendCode" style="background:#374151;margin-left:8px">Reenviar Código</button>
+            </div>
+            <button id="backToSignup" style="background:transparent;border:1px solid #374151;width:100%;margin-top:8px;font-size:12px">← Voltar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="paymentModal" class="modal hidden">
+        <div class="modal-content">
+          <button class="modal-close" id="closePayment">✕</button>
+          <h3>Desbloqueia Acesso Completo</h3>
+          <p>Escolhe um plano para activar todas as funcionalidades premium:</p>
+          
+          <div class="benefits">
+            <h4 style="color:#06b6d4;margin-bottom:12px">✨ O que vais receber:</h4>
+            <ul style="list-style:none;padding:0;margin:0 0 20px 0">
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Análise personalizada baseada em 20+ critérios
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Recomendações de IA adaptadas ao teu perfil
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Plano semanal detalhado com progressão
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Regras de gestão de risco personalizadas
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Gerador de stakes com Kelly Criterion
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Alertas psicológicos e de disciplina
+              </li>
+              <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <strong style="color:#10b981">✓</strong> Benchmarks realistas vs apostadores profissionais
+              </li>
+              <li style="padding:8px 0">
+                <strong style="color:#10b981">✓</strong> Questionários ilimitados para diferentes cenários
+              </li>
+            </ul>
+          </div>
+
+          <div class="plans">
+            <div class="plan">
+              <h4>Mensal</h4>
+              <p>€10 / mês</p>
+              <button class="payBtn" data-plan="monthly">Pagar Mensal</button>
+            </div>
+            <div class="plan plan-popular">
+              <div class="popular-badge">MAIS POPULAR</div>
+              <h4>Anual</h4>
+              <p class="price-main">€45 / ano</p>
+              <p class="price-compare">em vez de €120 (12 × €10)</p>
+              <p class="savings">Poupa €75!</p>
+              <button class="payBtn" data-plan="yearly">Pagar Anual</button>
+            </div>
+          </div>
+          
+          <div style="text-align:center;margin-top:16px;padding:12px;background:rgba(6,182,212,0.1);border-radius:8px">
+            <p style="margin:0;font-size:13px;color:#9fb4c8">
+              🔒 Pagamento seguro processado por Stripe<br>
+              💯 Cancela a qualquer momento
+            </p>
+          </div>
+        </div>
+      </div>
 
     </main>
 
