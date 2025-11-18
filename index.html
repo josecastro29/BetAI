@@ -274,6 +274,41 @@
           </div>
         </form>
       </section>
+
+      <section id="advice" class="card hidden">
+        <h2>Recomendação (IA)</h2>
+        <div id="adviceContent"></div>
+      </section>
+
+      <section id="betBuilder" class="card hidden">
+        <h2>Gerador de apostas</h2>
+        <p>Introduz uma aposta concreta (nome, odds decimais e a tua estimativa de probabilidade). O sistema calcula stake sugerida (Kelly e outro método).</p>
+
+        <form id="betForm">
+          <label>Evento / Aposta
+            <input type="text" id="event" placeholder="Ex: Team A vs Team B — vitória Team A" required>
+          </label>
+
+          <label>Odds (decimal)
+            <input type="number" id="odds" step="0.01" min="1.01" value="2.00" required>
+          </label>
+
+          <label>Tua probabilidade estimada (%)
+            <input type="number" id="prob" step="0.1" min="0.1" max="99.9" value="55" required>
+          </label>
+
+          <div class="actions">
+            <button type="submit">Calcular stake</button>
+          </div>
+        </form>
+
+        <div id="betResult"></div>
+      </section>
+
+      <section class="card">
+        <h3>Aviso e ética</h3>
+        <p>Esta ferramenta é meramente informativa. Aconselha-se responsabilidade financeira. Não sou um consultor financeiro. As apostas envolvem risco de perda total do capital.</p>
+      </section>
       </div>
       <!-- FIM ABA PRINCIPAL -->
 
