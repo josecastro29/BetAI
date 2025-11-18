@@ -1227,6 +1227,7 @@ async function renderAccount(){
 
 /* ----------------- Carregar Pontos para Barra Compacta ----------------- */
 async function loadPointsForMainTab(userEmail) {
+  console.log('🔄 loadPointsForMainTab chamada para:', userEmail);
   try {
     // Buscar usuário
     const { data: user, error } = await supabase
@@ -1240,14 +1241,17 @@ async function loadPointsForMainTab(userEmail) {
       return;
     }
     
+    console.log('✅ Utilizador encontrado:', user.id);
+    
     // Buscar pontos
-    const { data: points } = await supabase
+    const { data: points, error: pointsError } = await supabase
       .from('referral_points')
       .select('points')
       .eq('user_id', user.id)
       .single();
     
     const userPoints = points ? points.points : 0;
+    console.log('✅ Pontos carregados:', userPoints);
     
     // Atualizar barra compacta
     const userPointsMain = document.getElementById('userPointsMain');
@@ -1256,6 +1260,9 @@ async function loadPointsForMainTab(userEmail) {
     
     if (userPointsMain) {
       userPointsMain.textContent = userPoints;
+      console.log('✅ userPointsMain atualizado');
+    } else {
+      console.error('❌ userPointsMain não encontrado!');
     }
     
     // Calcular progresso
@@ -1264,10 +1271,16 @@ async function loadPointsForMainTab(userEmail) {
     
     if (pointsProgressMain) {
       pointsProgressMain.style.width = `${Math.min(progress, 100)}%`;
+      console.log('✅ pointsProgressMain atualizado:', progress + '%');
+    } else {
+      console.error('❌ pointsProgressMain não encontrado!');
     }
     
     if (pointsToNextMain) {
       pointsToNextMain.textContent = nextMilestone - userPoints;
+      console.log('✅ pointsToNextMain atualizado:', nextMilestone - userPoints);
+    } else {
+      console.error('❌ pointsToNextMain não encontrado!');
     }
     
   } catch (err) {
@@ -1306,6 +1319,11 @@ async function loadReferralData(userEmail) {
   // Preparar link de referral
   const linkInput = document.getElementById('referralLinkInput');
   
+  if (!linkInput) {
+    console.error('❌ Input de link de referral não encontrado!');
+    return;
+  }
+  
   // Se não tem código, gerar um agora (para utilizadores antigos)
   if (!user.referral_code) {
     const newCode = generateReferralCode(user.name || 'user', user.email);
@@ -1328,7 +1346,8 @@ async function loadReferralData(userEmail) {
   if (user.referral_code) {
     const fullLink = `${window.location.origin}${window.location.pathname}?ref=${user.referral_code}`;
     linkInput.value = fullLink;
-    console.log('✅ Link de referral configurado');
+    console.log('✅ Link de referral configurado:', fullLink);
+    console.log('✅ Input value:', linkInput.value);
   } else {
     linkInput.value = 'Erro ao gerar link - contacta o suporte';
     console.error('❌ Código de referral não disponível');
@@ -1418,6 +1437,11 @@ async function loadReferralData(userEmail) {
   
   // Adicionar event listener para copiar link
   const copyLinkBtn = document.getElementById('copyReferralLink');
+  
+  if (!copyLinkBtn) {
+    console.error('❌ Botão de copiar link não encontrado!');
+    return;
+  }
   
   // Remover listener antigo (se existir) e adicionar novo
   copyLinkBtn.replaceWith(copyLinkBtn.cloneNode(true));
