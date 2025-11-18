@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - BetAI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-header {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 32px;
+      border-radius: 12px;
+    }
+    
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: rgba(255,255,255,0.02);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #06b6d4;
+      margin: 8px 0;
+    }
+    
+    .stat-label {
+      font-size: 14px;
+      color: #9fb4c8;
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .data-table th {
+      background: rgba(6,182,212,0.2);
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #06b6d4;
+      border-bottom: 2px solid #06b6d4;
+    }
+    
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .data-table tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-pending {
+      background: rgba(234,179,8,0.2);
+      color: #eab308;
+    }
+    
+    .status-approved {
+      background: rgba(6,182,212,0.2);
+      color: #06b6d4;
+    }
+    
+    .status-paid {
+      background: rgba(16,185,129,0.2);
+      color: #10b981;
+    }
+    
+    .status-rejected {
+      background: rgba(239,68,68,0.2);
+      color: #ef4444;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      margin: 0 4px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .btn-approve {
+      background: #06b6d4;
+      color: #012;
+    }
+    
+    .btn-reject {
+      background: #ef4444;
+      color: white;
+    }
+    
+    .btn-pay {
+      background: #10b981;
+      color: #012;
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .logout-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      background: rgba(239,68,68,0.8);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <button class="logout-btn" onclick="logout()">🚪 Sair</button>
+  
+  <div class="container" style="max-width: 1400px; padding-top: 80px;">
+    <div class="admin-header">
+      <h1 style="margin: 0; font-size: 32px;">🔧 Painel de Administração</h1>
+      <p style="margin: 8px 0 0 0; opacity: 0.9;">BetAI - Gestão de Resgates e Utilizadores</p>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="admin-stats">
+      <div class="stat-card">
+        <div class="stat-label">Total de Utilizadores</div>
+        <div class="stat-value" id="totalUsers">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Resgates Pendentes</div>
+        <div class="stat-value" id="pendingRedemptions">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Pago</div>
+        <div class="stat-value" id="totalPaid">€0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pontos em Circulação</div>
+        <div class="stat-value" id="totalPoints">0</div>
+      </div>
+    </div>
+    
+    <!-- Resgates Pendentes -->
+    <div class="card">
+      <h2>💰 Resgates Pendentes</h2>
+      <div id="redemptionsContainer">
+        <p style="text-align: center; color: #9fb4c8;">Carregando...</p>
+      </div>
+    </div>
+    
+    <!-- Todos os Resgates -->
+    <div class="card" style="margin-top: 24px;">
+      <h2>📊 Histórico Completo de Resgates</h2>
+      <div id="allRedemptionsContainer">
+        <p style="text-align: center; color: #9fb4c8;">Carregando...</p>
+      </div>
+    </div>
+    
+    <!-- Utilizadores Recentes -->
+    <div class="card" style="margin-top: 24px;">
+      <h2>👥 Utilizadores Recentes</h2>
+      <div id="usersContainer">
+        <p style="text-align: center; color: #9fb4c8;">Carregando...</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Inicializar Supabase
+    const supabaseUrl = 'https://wthelmchpyzgkmuvibhl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0aGVsbWNocHl6Z2ttdXZpYmhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzEzNDc5MTUsImV4cCI6MjA0NjkyMzkxNX0.VVHm-rV7xQLHckPaDUFCOaPW0Nf4_Kcd8SBqSiT_cAc';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Verificar se o utilizador é admin
+    async function checkAdminAccess() {
+      const userId = localStorage.getItem('betai_current_user_id');
+      
+      if (!userId) {
+        alert('❌ Acesso negado! Faz login primeiro.');
+        window.location.href = 'index.html';
+        return false;
+      }
+      
+      try {
+        const { data: user, error } = await supabase
+          .from('users')
+          .select('is_admin, email')
+          .eq('id', userId)
+          .single();
+        
+        if (error || !user || !user.is_admin) {
+          alert('❌ Acesso negado! Apenas administradores podem aceder a esta página.');
+          window.location.href = 'index.html';
+          return false;
+        }
+        
+        console.log('✅ Admin autenticado:', user.email);
+        return true;
+      } catch (err) {
+        console.error('Erro ao verificar admin:', err);
+        window.location.href = 'index.html';
+        return false;
+      }
+    }
+    
+    // Carregar estatísticas
+    async function loadStats() {
+      try {
+        // Total de utilizadores
+        const { count: usersCount } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true });
+        
+        document.getElementById('totalUsers').textContent = usersCount || 0;
+        
+        // Resgates pendentes
+        const { count: pendingCount } = await supabase
+          .from('redemptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        
+        document.getElementById('pendingRedemptions').textContent = pendingCount || 0;
+        
+        // Total pago
+        const { data: paidRedemptions } = await supabase
+          .from('redemptions')
+          .select('amount_euro')
+          .eq('status', 'paid');
+        
+        const totalPaid = paidRedemptions?.reduce((sum, r) => sum + parseFloat(r.amount_euro), 0) || 0;
+        document.getElementById('totalPaid').textContent = `€${totalPaid.toFixed(2)}`;
+        
+        // Pontos em circulação
+        const { data: pointsData } = await supabase
+          .from('referral_points')
+          .select('points');
+        
+        const totalPoints = pointsData?.reduce((sum, p) => sum + p.points, 0) || 0;
+        document.getElementById('totalPoints').textContent = totalPoints;
+        
+      } catch (err) {
+        console.error('Erro ao carregar estatísticas:', err);
+      }
+    }
+    
+    // Carregar resgates pendentes
+    async function loadPendingRedemptions() {
+      try {
+        const { data, error } = await supabase
+          .from('redemptions')
+          .select(`
+            *,
+            users (
+              name,
+              email,
+              phone
+            )
+          `)
+          .eq('status', 'pending')
+          .order('requested_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const container = document.getElementById('redemptionsContainer');
+        
+        if (!data || data.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #9fb4c8;">Nenhum resgate pendente</p>';
+          return;
+        }
+        
+        container.innerHTML = `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Utilizador</th>
+                <th>Pontos</th>
+                <th>Valor</th>
+                <th>IBAN</th>
+                <th>Nome da Conta</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(r => `
+                <tr>
+                  <td>${new Date(r.requested_at).toLocaleString('pt-PT')}</td>
+                  <td>
+                    <strong>${r.users.name}</strong><br>
+                    <small style="color: #9fb4c8;">${r.users.email}</small><br>
+                    <small style="color: #9fb4c8;">${r.users.phone || 'N/A'}</small>
+                  </td>
+                  <td><strong>${r.points_redeemed}</strong> pts</td>
+                  <td><strong style="color: #10b981;">€${r.amount_euro}</strong></td>
+                  <td style="font-family: monospace; font-size: 12px;">${r.payment_details.iban}</td>
+                  <td>${r.payment_details.accountName}</td>
+                  <td>
+                    <button class="action-btn btn-pay" onclick="processRedemption('${r.id}', 'paid')">
+                      ✅ Marcar Pago
+                    </button>
+                    <button class="action-btn btn-reject" onclick="processRedemption('${r.id}', 'rejected')">
+                      ❌ Rejeitar
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        
+      } catch (err) {
+        console.error('Erro ao carregar resgates:', err);
+        document.getElementById('redemptionsContainer').innerHTML = 
+          '<p style="color: #ef4444;">Erro ao carregar resgates</p>';
+      }
+    }
+    
+    // Carregar todos os resgates
+    async function loadAllRedemptions() {
+      try {
+        const { data, error } = await supabase
+          .from('redemptions')
+          .select(`
+            *,
+            users (
+              name,
+              email
+            )
+          `)
+          .order('requested_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        const container = document.getElementById('allRedemptionsContainer');
+        
+        if (!data || data.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #9fb4c8;">Nenhum resgate ainda</p>';
+          return;
+        }
+        
+        const statusClass = {
+          pending: 'status-pending',
+          approved: 'status-approved',
+          paid: 'status-paid',
+          rejected: 'status-rejected'
+        };
+        
+        const statusLabel = {
+          pending: '⏳ Pendente',
+          approved: '✅ Aprovado',
+          paid: '💰 Pago',
+          rejected: '❌ Rejeitado'
+        };
+        
+        container.innerHTML = `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Utilizador</th>
+                <th>Pontos</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Processado em</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(r => `
+                <tr>
+                  <td>${new Date(r.requested_at).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                  <td>
+                    <strong>${r.users.name}</strong><br>
+                    <small style="color: #9fb4c8;">${r.users.email}</small>
+                  </td>
+                  <td>${r.points_redeemed} pts</td>
+                  <td><strong>€${r.amount_euro}</strong></td>
+                  <td><span class="status-badge ${statusClass[r.status]}">${statusLabel[r.status]}</span></td>
+                  <td>${r.processed_at ? new Date(r.processed_at).toLocaleString('pt-PT', { dateStyle: 'short' }) : '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        
+      } catch (err) {
+        console.error('Erro ao carregar histórico:', err);
+      }
+    }
+    
+    // Carregar utilizadores recentes
+    async function loadRecentUsers() {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        if (error) throw error;
+        
+        const container = document.getElementById('usersContainer');
+        
+        if (!data || data.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #9fb4c8;">Nenhum utilizador ainda</p>';
+          return;
+        }
+        
+        container.innerHTML = `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telemóvel</th>
+                <th>Subscrito</th>
+                <th>Pontos</th>
+                <th>Registo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(u => `
+                <tr>
+                  <td><strong>${u.name}</strong></td>
+                  <td>${u.email}</td>
+                  <td>${u.phone || 'N/A'}</td>
+                  <td>${u.subscribed ? '<span style="color: #10b981;">✓ Sim</span>' : '<span style="color: #9fb4c8;">✗ Não</span>'}</td>
+                  <td id="points-${u.id}">...</td>
+                  <td>${new Date(u.created_at).toLocaleDateString('pt-PT')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        
+        // Carregar pontos de cada utilizador
+        data.forEach(async (u) => {
+          const { data: points } = await supabase
+            .from('referral_points')
+            .select('points')
+            .eq('user_id', u.id)
+            .single();
+          
+          const pointsElement = document.getElementById(`points-${u.id}`);
+          if (pointsElement) {
+            pointsElement.textContent = points ? `${points.points} pts` : '0 pts';
+          }
+        });
+        
+      } catch (err) {
+        console.error('Erro ao carregar utilizadores:', err);
+      }
+    }
+    
+    // Processar resgate
+    async function processRedemption(redemptionId, newStatus) {
+      const confirmMsg = newStatus === 'paid' 
+        ? 'Confirmas que o pagamento foi efetuado?' 
+        : 'Tens a certeza que queres rejeitar este resgate? Os pontos serão devolvidos ao utilizador.';
+      
+      if (!confirm(confirmMsg)) return;
+      
+      try {
+        const { error } = await supabase.rpc('process_redemption', {
+          p_redemption_id: redemptionId,
+          p_new_status: newStatus,
+          p_admin_notes: newStatus === 'paid' ? 'Pago manualmente pelo admin' : 'Rejeitado pelo admin'
+        });
+        
+        if (error) throw error;
+        
+        alert(`✅ Resgate ${newStatus === 'paid' ? 'marcado como pago' : 'rejeitado'} com sucesso!`);
+        
+        // Recarregar dados
+        loadStats();
+        loadPendingRedemptions();
+        loadAllRedemptions();
+        
+      } catch (err) {
+        console.error('Erro ao processar resgate:', err);
+        alert('❌ Erro ao processar resgate: ' + err.message);
+      }
+    }
+    
+    // Logout
+    function logout() {
+      localStorage.removeItem('betai_current_user_id');
+      localStorage.removeItem('betai_current_user_email');
+      window.location.href = 'index.html';
+    }
+    
+    // Inicializar
+    async function init() {
+      const isAdmin = await checkAdminAccess();
+      if (!isAdmin) return;
+      
+      await loadStats();
+      await loadPendingRedemptions();
+      await loadAllRedemptions();
+      await loadRecentUsers();
+      
+      // Atualizar a cada 30 segundos
+      setInterval(() => {
+        loadStats();
+        loadPendingRedemptions();
+      }, 30000);
+    }
+    
+    init();
+  </script>
+</body>
+</html>

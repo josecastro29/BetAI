@@ -656,6 +656,14 @@ function setupAuthUI(){
       localStorage.setItem('betai_current_user_id', data.id);
       localStorage.setItem('betai_current_user_email', data.email);
       
+      // Verificar se é admin e redirecionar
+      if (data.is_admin === true) {
+        console.log('✅ Admin detectado! Redirecionando...');
+        alert('✅ Bem-vindo, Admin!');
+        window.location.href = 'admin.html';
+        return;
+      }
+      
       authModal.classList.add('hidden');
       renderAccount();
       
