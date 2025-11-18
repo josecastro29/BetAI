@@ -213,12 +213,48 @@
       try {
         const { data: user, error } = await supabase
           .from('users')
-          .select('is_admin, email')
+          .select('is_admin, email, name')
           .eq('id', userId)
           .single();
         
-        if (error || !user || !user.is_admin) {
-          alert('❌ Acesso negado! Apenas administradores podem aceder a esta página.');
+        // Debug: Mostrar informações no console
+        console.log('👤 Utilizador:', user);
+        console.log('🔑 is_admin:', user?.is_admin);
+        console.log('❌ Erro:', error);
+        
+        if (error) {
+          console.error('❌ Erro ao buscar utilizador:', error);
+          
+          // Verificar se o erro é porque o campo is_admin não existe
+          if (error.message.includes('column') && error.message.includes('is_admin')) {
+            alert('❌ ERRO DE CONFIGURAÇÃO!\n\n' +
+                  'O campo "is_admin" ainda não existe na base de dados.\n\n' +
+                  'SOLUÇÃO:\n' +
+                  '1. Abre o Supabase SQL Editor\n' +
+                  '2. Executa o ficheiro add_admin_field.sql\n' +
+                  '3. Substitui o email pelo teu email\n' +
+                  '4. Tenta fazer login novamente');
+          } else {
+            alert('❌ Erro ao verificar permissões: ' + error.message);
+          }
+          
+          window.location.href = 'index.html';
+          return false;
+        }
+        
+        if (!user) {
+          alert('❌ Utilizador não encontrado!');
+          window.location.href = 'index.html';
+          return false;
+        }
+        
+        if (!user.is_admin) {
+          alert('❌ Acesso negado!\n\n' +
+                'Apenas administradores podem aceder a esta página.\n\n' +
+                `Utilizador atual: ${user.name} (${user.email})\n` +
+                `is_admin: ${user.is_admin || false}\n\n` +
+                'Se devias ser admin, executa o SQL:\n' +
+                `UPDATE users SET is_admin = true WHERE email = '${user.email}';`);
           window.location.href = 'index.html';
           return false;
         }
@@ -226,7 +262,8 @@
         console.log('✅ Admin autenticado:', user.email);
         return true;
       } catch (err) {
-        console.error('Erro ao verificar admin:', err);
+        console.error('❌ Erro inesperado ao verificar admin:', err);
+        alert('❌ Erro inesperado: ' + err.message);
         window.location.href = 'index.html';
         return false;
       }
