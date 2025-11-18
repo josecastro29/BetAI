@@ -1462,6 +1462,13 @@ async function loadReferralData(userEmail) {
     console.error('Erro ao carregar referências:', err);
   }
   
+  // Carregar histórico de resgates
+  try {
+    await loadRedemptionHistory(user.id);
+  } catch (err) {
+    console.error('Erro ao carregar histórico de resgates:', err);
+  }
+  
   // Adicionar event listener para copiar link
   const copyLinkBtn = document.getElementById('copyReferralLink');
   
@@ -2248,24 +2255,6 @@ async function loadRedemptionHistory(userId) {
   }
 }
 
-// Modificar loadReferralData para também carregar histórico de resgates
-const originalLoadReferralData = loadReferralData;
-async function loadReferralData(email) {
-  await originalLoadReferralData(email);
-  
-  // Carregar histórico de resgates também
-  try {
-    const { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
-    
-    if (user) {
-      await loadRedemptionHistory(user.id);
-    }
-  } catch (err) {
-    console.error('Erro ao carregar histórico de resgates:', err);
-  }
-}
+// NOTA: loadRedemptionHistory já é chamado dentro de loadReferralData original
+// Não é necessário redefinir a função aqui
 
