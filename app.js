@@ -1362,39 +1362,66 @@ async function loadReferralData(userEmail) {
       .single();
     
     const userPoints = points ? points.points : 0;
+    console.log('💎 Pontos obtidos do Supabase:', userPoints);
     
     // Atualizar na aba Missões
-    document.getElementById('userPoints').textContent = userPoints;
+    const userPointsElement = document.getElementById('userPoints');
+    if (userPointsElement) {
+      userPointsElement.textContent = userPoints;
+      console.log('✅ userPoints (Missões) atualizado para:', userPoints);
+    } else {
+      console.error('❌ Elemento userPoints não encontrado!');
+    }
     
     // Atualizar na barra compacta da aba BetAI
     const userPointsMain = document.getElementById('userPointsMain');
     if (userPointsMain) {
       userPointsMain.textContent = userPoints;
+      console.log('✅ userPointsMain (Barra) atualizado para:', userPoints);
+    } else {
+      console.error('❌ Elemento userPointsMain não encontrado!');
     }
     
     // Calcular progresso para próxima recompensa
     const nextMilestone = userPoints < 20 ? 20 : userPoints < 50 ? 50 : 100;
     const progress = (userPoints / nextMilestone) * 100;
+    console.log('📊 Progresso calculado:', progress + '%', 'até', nextMilestone, 'pontos');
     
     // Atualizar na aba Missões
-    document.getElementById('pointsProgress').style.width = `${Math.min(progress, 100)}%`;
-    document.getElementById('pointsToNext').textContent = nextMilestone - userPoints;
+    const pointsProgressElement = document.getElementById('pointsProgress');
+    const pointsToNextElement = document.getElementById('pointsToNext');
+    
+    if (pointsProgressElement) {
+      pointsProgressElement.style.width = `${Math.min(progress, 100)}%`;
+      console.log('✅ pointsProgress (Missões) atualizado');
+    } else {
+      console.error('❌ Elemento pointsProgress não encontrado!');
+    }
+    
+    if (pointsToNextElement) {
+      pointsToNextElement.textContent = nextMilestone - userPoints;
+      console.log('✅ pointsToNext (Missões) atualizado para:', nextMilestone - userPoints);
+    } else {
+      console.error('❌ Elemento pointsToNext não encontrado!');
+    }
     
     // Atualizar na barra compacta da aba BetAI
     const pointsProgressMain = document.getElementById('pointsProgressMain');
     const pointsToNextMain = document.getElementById('pointsToNextMain');
     if (pointsProgressMain) {
       pointsProgressMain.style.width = `${Math.min(progress, 100)}%`;
+      console.log('✅ pointsProgressMain (Barra) atualizado');
     }
     if (pointsToNextMain) {
       pointsToNextMain.textContent = nextMilestone - userPoints;
+      console.log('✅ pointsToNextMain (Barra) atualizado');
     }
     
     // Atualizar botões de resgate baseado nos pontos disponíveis
     updateRedemptionButtons(userPoints);
     
   } catch (err) {
-    console.log('Sem pontos ainda');
+    console.error('❌ Erro ao carregar pontos:', err);
   }
   
   // Carregar estatísticas de referências
