@@ -1837,6 +1837,81 @@ function switchTab(targetTab) {
   }
 }
 
+/* ----------------- Sistema de Questionário Multi-etapas ----------------- */
+let currentSurveyStep = 1;
+const totalSteps = 5;
+
+function updateSurveyProgress() {
+  const currentStepEl = document.getElementById('currentStep');
+  const progressPercentEl = document.getElementById('progressPercent');
+  const progressBarEl = document.getElementById('progressBar');
+  
+  if (!currentStepEl || !progressPercentEl || !progressBarEl) return;
+  
+  currentStepEl.textContent = currentSurveyStep;
+  const percent = Math.round((currentSurveyStep / totalSteps) * 100);
+  progressPercentEl.textContent = percent;
+  progressBarEl.style.width = percent + '%';
+  
+  // Atualizar indicadores de etapa
+  document.querySelectorAll('.step-indicator').forEach((ind, i) => {
+    const step = i + 1;
+    ind.classList.remove('active', 'completed');
+    if (step < currentSurveyStep) ind.classList.add('completed');
+    if (step === currentSurveyStep) ind.classList.add('active');
+  });
+  
+  // Atualizar visibilidade das etapas
+  document.querySelectorAll('.survey-step').forEach(s => s.classList.remove('active'));
+  const activeStep = document.querySelector(`.survey-step[data-step="${currentSurveyStep}"]`);
+  if (activeStep) activeStep.classList.add('active');
+  
+  // Atualizar visibilidade dos botões
+  const prevBtn = document.getElementById('prevStep');
+  const nextBtn = document.getElementById('nextStep');
+  const submitBtn = document.getElementById('submitSurvey');
+  
+  if (prevBtn) prevBtn.style.display = currentSurveyStep === 1 ? 'none' : 'flex';
+  if (nextBtn) nextBtn.style.display = currentSurveyStep === totalSteps ? 'none' : 'flex';
+  if (submitBtn) submitBtn.style.display = currentSurveyStep === totalSteps ? 'flex' : 'none';
+}
+
+function initSurveyWizard() {
+  const nextBtn = document.getElementById('nextStep');
+  const prevBtn = document.getElementById('prevStep');
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentSurveyStep < totalSteps) {
+        currentSurveyStep++;
+        updateSurveyProgress();
+        // Scroll para o topo do questionário
+        const questionnaire = document.getElementById('questionnaire');
+        if (questionnaire) {
+          questionnaire.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    });
+  }
+  
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentSurveyStep > 1) {
+        currentSurveyStep--;
+        updateSurveyProgress();
+        // Scroll para o topo do questionário
+        const questionnaire = document.getElementById('questionnaire');
+        if (questionnaire) {
+          questionnaire.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    });
+  }
+  
+  // Inicializar o wizard mostrando a primeira etapa
+  updateSurveyProgress();
+}
+
 /* ----------------- Sistema de Missões ----------------- */
 function handleMissionClick(missionType) {
   if (missionType === 'register') {
@@ -1931,6 +2006,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Inicializar sistema de resgate
   initRedemptionSystem();
+  
+  // Inicializar wizard do questionário
+  initSurveyWizard();
 });
 
 /* ----------------- Sistema de Resgate de Pontos ----------------- */

@@ -63,9 +63,45 @@
       </section>
       
       <section class="card">
-        <h2>Questionário</h2>
+        <h2>Questionário Inteligente</h2>
+        
+        <!-- Barra de Progresso -->
+        <div style="margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:14px;color:#9fb4c8">Etapa <span id="currentStep">1</span> de 5</span>
+            <span style="font-size:14px;color:#06b6d4;font-weight:600"><span id="progressPercent">20</span>% completo</span>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:12px;height:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">
+            <div id="progressBar" style="background:linear-gradient(90deg,#06b6d4,#10b981);height:100%;width:20%;transition:width 0.3s ease;box-shadow:0 0 8px rgba(6,182,212,0.5)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:12px;gap:4px">
+            <div class="step-indicator active" data-step="1">
+              <div style="font-size:10px;color:#06b6d4;font-weight:600;margin-bottom:2px">💰</div>
+              <div style="font-size:9px;color:#9fb4c8">Finanças</div>
+            </div>
+            <div class="step-indicator" data-step="2">
+              <div style="font-size:10px;color:#9fb4c8;font-weight:600;margin-bottom:2px">📊</div>
+              <div style="font-size:9px;color:#9fb4c8">Experiência</div>
+            </div>
+            <div class="step-indicator" data-step="3">
+              <div style="font-size:10px;color:#9fb4c8;font-weight:600;margin-bottom:2px">🎯</div>
+              <div style="font-size:9px;color:#9fb4c8">Preferências</div>
+            </div>
+            <div class="step-indicator" data-step="4">
+              <div style="font-size:10px;color:#9fb4c8;font-weight:600;margin-bottom:2px">⏰</div>
+              <div style="font-size:9px;color:#9fb4c8">Disciplina</div>
+            </div>
+            <div class="step-indicator" data-step="5">
+              <div style="font-size:10px;color:#9fb4c8;font-weight:600;margin-bottom:2px">🧠</div>
+              <div style="font-size:9px;color:#9fb4c8">Conhecimento</div>
+            </div>
+          </div>
+        </div>
+
         <form id="survey">
-          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">💰 Informação Financeira</h3>
+          <!-- ETAPA 1: Informação Financeira -->
+          <div class="survey-step active" data-step="1">
+            <h3 style="margin-top:0;color:#06b6d4;font-size:18px;margin-bottom:20px">💰 Informação Financeira</h3>
 
           <label>Bankroll (capital disponível em €)
             <input type="number" id="bankroll" value="100" min="1" required>
@@ -94,8 +130,11 @@
               <option value="primary">Rendimento principal (⚠️ arriscado)</option>
             </select>
           </label>
+          </div>
 
-          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">📊 Historial e Experiência</h3>
+          <!-- ETAPA 2: Historial e Experiência -->
+          <div class="survey-step" data-step="2">
+            <h3 style="margin-top:0;color:#06b6d4;font-size:18px;margin-bottom:20px">📊 Historial e Experiência</h3>
 
           <label>Experiência em apostas
             <select id="experience">
@@ -118,8 +157,11 @@
           <label>Maior sequência de perdas consecutivas
             <input type="number" id="maxLoss" value="3" min="0" max="20">
           </label>
+          </div>
 
-          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">🎯 Preferências de Apostas</h3>
+          <!-- ETAPA 3: Preferências de Apostas -->
+          <div class="survey-step" data-step="3">
+            <h3 style="margin-top:0;color:#06b6d4;font-size:18px;margin-bottom:20px">🎯 Preferências de Apostas</h3>
 
           <label>Preferência de esporte
             <select id="sport">
@@ -166,8 +208,11 @@
               <option value="mixed">Vários mercados</option>
             </select>
           </label>
+          </div>
 
-          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">⏰ Disponibilidade e Disciplina</h3>
+          <!-- ETAPA 4: Disponibilidade e Disciplina -->
+          <div class="survey-step" data-step="4">
+            <h3 style="margin-top:0;color:#06b6d4;font-size:18px;margin-bottom:20px">⏰ Disponibilidade e Disciplina</h3>
 
           <label>Tempo dedicado por dia a analisar apostas
             <select id="timePerDay">
@@ -208,8 +253,11 @@
               <option value="never">Nunca</option>
             </select>
           </label>
+          </div>
 
-          <h3 style="margin-top:20px;color:#06b6d4;font-size:16px">🧠 Conhecimento Técnico</h3>
+          <!-- ETAPA 5: Conhecimento Técnico e Perfil de Risco -->
+          <div class="survey-step" data-step="5">
+            <h3 style="margin-top:0;color:#06b6d4;font-size:18px;margin-bottom:20px">🧠 Conhecimento Técnico e Perfil de Risco</h3>
 
           <label>Acompanhas notícias de lesões/equipas regularmente?
             <select id="followNews">
@@ -263,10 +311,13 @@
               <option value="confidence">Baseado em confiança</option>
             </select>
           </label>
+          </div>
 
-          <div class="actions">
-            <button type="submit">Gerar recomendação</button>
-            <button type="button" id="resetBtn">Limpar</button>
+          <!-- Survey Navigation Buttons -->
+          <div class="survey-navigation">
+            <button type="button" id="prevStep" class="btn-prev" style="display:none">← Anterior</button>
+            <button type="button" id="nextStep" class="btn-next">Seguinte →</button>
+            <button type="submit" id="submitSurvey" style="display:none">✨ Gerar Recomendação</button>
           </div>
         </form>
       </section>
