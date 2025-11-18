@@ -667,7 +667,21 @@ function setupAuthUI(){
       authModal.classList.add('hidden');
       renderAccount();
       
-      alert('✅ Login bem-sucedido!');
+      // Verificar se estava a tentar subscrever antes de fazer login
+      const desiredPlan = localStorage.getItem('betai_desired_plan');
+      if (desiredPlan) {
+        alert('✅ Login bem-sucedido!\n\n💳 Vamos redirecioná-lo para completar a subscrição...');
+        
+        // Limpar plano desejado
+        localStorage.removeItem('betai_desired_plan');
+        
+        // Processar pagamento
+        setTimeout(() => {
+          handlePayment(desiredPlan);
+        }, 1000);
+      } else {
+        alert('✅ Login bem-sucedido!');
+      }
       
     } catch (err) {
       console.error('Erro ao fazer login:', err);
@@ -775,9 +789,24 @@ function setupAuthUI(){
       if (referrerId) {
         successMsg += '\n\n🎁 Foste referido! O teu amigo ganhou +1 ponto!';
       }
-      successMsg += '\n\nPreenche o questionário para gerar recomendações personalizadas.';
       
-      alert(successMsg);
+      // Verificar se estava a tentar subscrever antes de se registar
+      const desiredPlan = localStorage.getItem('betai_desired_plan');
+      if (desiredPlan) {
+        successMsg += '\n\n💳 Vamos agora redirecioná-lo para completar a subscrição...';
+        alert(successMsg);
+        
+        // Limpar plano desejado
+        localStorage.removeItem('betai_desired_plan');
+        
+        // Aguardar um momento e processar pagamento
+        setTimeout(() => {
+          handlePayment(desiredPlan);
+        }, 1000);
+      } else {
+        successMsg += '\n\nPreenche o questionário para gerar recomendações personalizadas.';
+        alert(successMsg);
+      }
       
     } catch (err) {
       console.error('Erro ao criar utilizador:', err);
@@ -1463,14 +1492,44 @@ async function cancelSubscription(user){
 // TODO: Implementar webhooks para confirmação automática server-side
 closePayment.addEventListener('click',()=>paymentModal.classList.add('hidden'));
 
-function handlePayment(plan){
-  const u = getCurrentUser();
+async function handlePayment(plan){
+  // Verificar se o utilizador está registado
+  const u = await getCurrentUser();
+  
   if (!u){ 
-    // Fechar modal de pagamento e abrir modal de registo/login
+    // Mostrar mensagem clara
+    alert('⚠️ Registo Necessário!\n\n' +
+          'Para subscrever um plano, primeiro precisas de criar uma conta.\n\n' +
+          '✓ É rápido e grátis\n' +
+          '✓ Recebe +1 ponto de bónus pelo registo\n' +
+          '✓ Acesso imediato após pagamento\n\n' +
+          'Vamos redirecioná-lo para o registo...');
+    
+    // Fechar modal de pagamento e abrir modal de registo
     paymentModal.classList.add('hidden'); 
-    authModal.classList.remove('hidden'); 
+    authModal.classList.remove('hidden');
+    
+    // Mudar para o tab de registo (signup)
+    const signupBox = document.getElementById('signupBox');
+    const loginBox = document.getElementById('loginBox');
+    const tabSignup = document.getElementById('tabSignup');
+    const tabLogin = document.getElementById('tabLogin');
+    
+    if (signupBox && loginBox) {
+      signupBox.classList.remove('hidden');
+      loginBox.classList.add('hidden');
+      tabSignup?.classList.add('active');
+      tabLogin?.classList.remove('active');
+    }
+    
+    // Guardar plano desejado para depois do registo
+    localStorage.setItem('betai_desired_plan', plan);
+    
     return; 
   }
+  
+  // Limpar plano desejado se existir (já está registado)
+  localStorage.removeItem('betai_desired_plan');
   
   // Redirecionar para Stripe Checkout com Payment Links
   const stripeLinks = {
