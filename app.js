@@ -1548,7 +1548,33 @@ async function handlePayment(plan){
   window.location.href = stripeLinks[plan];
 }
 
-function checkPaymentReturn(){
+/* ----------------- Adicionar Pontos por Subscrição ----------------- */
+async function addSubscriptionPoints(userId, plan) {
+  try {
+    const points = plan === 'monthly' ? 5 : 10;
+    const reason = plan === 'monthly' 
+      ? 'Subscrição Mensal (+5 pontos)' 
+      : 'Subscrição Anual (+10 pontos)';
+    
+    // Chamar a função do Supabase para adicionar pontos
+    const { error } = await supabase.rpc('add_referral_points', {
+      p_user_id: userId,
+      p_points: points,
+      p_reason: reason,
+      p_referral_id: null
+    });
+    
+    if (error) {
+      console.error('Erro ao adicionar pontos de subscrição:', error);
+    } else {
+      console.log(`✅ Pontos de subscrição adicionados: +${points} pontos`);
+    }
+  } catch (err) {
+    console.error('Erro ao processar pontos de subscrição:', err);
+  }
+}
+
+async function checkPaymentReturn(){
   // Verificar parâmetros URL para confirmar sucesso do pagamento
   const urlParams = new URLSearchParams(window.location.search);
   const paymentSuccess = urlParams.get('payment') === 'success';
@@ -1570,14 +1596,20 @@ function checkPaymentReturn(){
         u.cancelledAt = null; // Limpar qualquer cancelamento anterior
         saveUser(u);
         
+        // Adicionar pontos pela subscrição
+        await addSubscriptionPoints(u.id, payment.plan);
+        
         // Limpar dados pendentes
         localStorage.removeItem('betai_pending_payment');
         
         // Atualizar UI
         renderAccount();
         
-        // Mostrar mensagem de sucesso
-        alert('🎉 Pagamento bem-sucedido! A tua subscrição está ativa. Agora podes usar o questionário para obter recomendações!');
+        // Calcular pontos ganhos
+        const pointsEarned = payment.plan === 'monthly' ? 5 : 10;
+        
+        // Mostrar mensagem de sucesso com pontos
+        alert(`🎉 Pagamento bem-sucedido! A tua subscrição está ativa.\n\n✨ Ganhaste +${pointsEarned} pontos!\n\nAgora podes usar o questionário para obter recomendações!`);
         
         // Limpar URL
         window.history.replaceState({}, document.title, window.location.pathname);
